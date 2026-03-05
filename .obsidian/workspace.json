@@ -186,6 +186,7 @@
   "active": "2b3bdc3431a7c044",
   "lastOpenFiles": [
     "milestone.md",
+    "optimized.md",
     "plans.md",
     "front-end/src/api/stats.js",
     "back-end/target/classes/com/stellerainn/backend/controller/PomodoroController.class",

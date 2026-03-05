@@ -35,7 +35,31 @@
           </el-table>
         </el-tab-pane>
         <el-tab-pane label="Kanban View" name="kanban">
-          Kanban Board (Coming Soon)
+          <div class="kanban-board">
+            <div class="kanban-column" v-for="status in ['TODO', 'IN_PROGRESS', 'DONE']" :key="status">
+              <div class="column-header">
+                <h3>{{ formatStatus(status) }}</h3>
+                <el-tag :type="getStatusType(status)">{{ getTasksByStatus(status).length }}</el-tag>
+              </div>
+              <draggable 
+                :list="getTasksByStatus(status)" 
+                group="tasks" 
+                item-key="id"
+                @change="(evt) => handleDragChange(evt, status)"
+                class="draggable-area"
+              >
+                <template #item="{ element }">
+                  <div class="kanban-card" @click="handleEdit(element)">
+                    <div class="card-title">{{ element.title }}</div>
+                    <div class="card-meta">
+                      <el-tag size="small" :type="getPriorityType(element.priority)">{{ element.priority }}</el-tag>
+                      <span class="card-date" v-if="element.dueDate">{{ formatDateShort(element.dueDate) }}</span>
+                    </div>
+                  </div>
+                </template>
+              </draggable>
+            </div>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </el-card>
@@ -82,11 +106,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTasks, createTask, updateTask, deleteTask } from '@/api/task'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import draggable from 'vuedraggable'
 
 const router = useRouter()
 const activeName = ref('list')
@@ -229,6 +254,44 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString()
 }
 
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getMonth()+1}/${date.getDate()}`
+}
+
+const formatStatus = (status) => {
+  const map = {
+    'TODO': 'To Do',
+    'IN_PROGRESS': 'In Progress',
+    'DONE': 'Done'
+  }
+  return map[status] || status
+}
+
+// Kanban Helpers
+const getTasksByStatus = (status) => {
+  return tableData.value.filter(task => task.status === status)
+}
+
+const handleDragChange = async (evt, newStatus) => {
+  if (evt.added) {
+    const task = evt.added.element
+    // Optimistic update locally first
+    task.status = newStatus
+    
+    // Call API to update status
+    try {
+      await updateTask(task.id, { ...task, status: newStatus, userId: userStore.user.id })
+      // No need to fetchTasks() if optimistic update works, but for safety we can
+      // fetchTasks() 
+    } catch (e) {
+      ElMessage.error('Failed to update task status')
+      fetchTasks() // Revert on error
+    }
+  }
+}
+
 onMounted(() => {
   fetchTasks()
 })
@@ -239,5 +302,63 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.kanban-board {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 20px;
+  min-height: 400px;
+}
+.kanban-column {
+  flex: 1;
+  min-width: 250px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 5px;
+}
+.column-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+.draggable-area {
+  flex: 1;
+  min-height: 100px;
+}
+.kanban-card {
+  background-color: white;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.kanban-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.card-title {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #303133;
+}
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-date {
+  font-size: 12px;
+  color: #909399;
 }
 </style>

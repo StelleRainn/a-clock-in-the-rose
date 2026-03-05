@@ -1,32 +1,73 @@
 <template>
-  <div>
-    <h1>Dashboard</h1>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1>Dashboard</h1>
+      <span class="date-display">{{ currentDate }}</span>
+    </div>
+    
     <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card class="box-card">
+      <!-- Left Column: Tasks & Calendar -->
+      <el-col :span="16">
+        <!-- Calendar View -->
+        <el-card class="calendar-card">
+          <el-calendar v-model="calendarDate">
+            <template #date-cell="{ data }">
+              <div class="calendar-cell" :class="{ 'is-selected': data.isSelected }">
+                <div class="day-number">{{ data.day.split('-').slice(2).join('') }}</div>
+                <div class="day-content">
+                  <div v-if="getTasksForDate(data.day).length > 0" class="task-dot-container">
+                    <el-tooltip 
+                      effect="dark" 
+                      :content="`${getTasksForDate(data.day).length} tasks due`" 
+                      placement="top"
+                    >
+                      <span class="task-dot"></span>
+                    </el-tooltip>
+                  </div>
+                  <div v-if="getFocusTimeForDate(data.day) > 0" class="focus-badge">
+                    {{ Math.round(getFocusTimeForDate(data.day) / 60) }}m
+                  </div>
+                </div>
+              </div>
+            </template>
+          </el-calendar>
+        </el-card>
+
+        <!-- Recent Tasks -->
+        <el-card class="box-card mt-20">
           <template #header>
             <div class="card-header">
-              <span>My Tasks</span>
+              <span>Recent Tasks</span>
               <el-button text @click="router.push('/tasks')">View All</el-button>
             </div>
           </template>
           <div v-if="tasks.length === 0" class="empty-text">No tasks found.</div>
           <div v-for="task in tasks.slice(0, 5)" :key="task.id" class="text item task-item">
-            <span :class="{ 'completed': task.status === 'DONE' }">{{ task.title }}</span>
+            <div class="task-info">
+              <span :class="{ 'completed': task.status === 'DONE' }">{{ task.title }}</span>
+              <span v-if="task.dueDate" class="task-due">{{ formatDateShort(task.dueDate) }}</span>
+            </div>
             <el-tag size="small" :type="getStatusType(task.status)">{{ task.status }}</el-tag>
           </div>
         </el-card>
       </el-col>
-      <el-col :span="12">
+
+      <!-- Right Column: Stats & Quick Actions -->
+      <el-col :span="8">
+        <!-- Pomodoro Stats -->
         <el-card class="box-card">
           <template #header>
             <div class="card-header">
-              <span>Pomodoro Stats</span>
+              <span>Today's Focus</span>
             </div>
           </template>
           <div class="stat-item">
             <h3>Completed Pomodoros</h3>
             <p class="stat-number">{{ pomodoroStore.completedPomodoros }}</p>
+            <p class="stat-subtitle">Approx. {{ pomodoroStore.completedPomodoros * 25 }} minutes</p>
+          </div>
+          <div class="action-buttons">
+            <el-button type="primary" class="w-100" @click="router.push('/pomodoro')">Start Focus</el-button>
           </div>
         </el-card>
       </el-col>
@@ -35,9 +76,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTasks } from '@/api/task'
+import { getDailyFocusStats } from '@/api/stats'
 import { useUserStore } from '@/stores/user'
 import { usePomodoroStore } from '@/stores/pomodoro'
 
@@ -45,6 +87,12 @@ const router = useRouter()
 const userStore = useUserStore()
 const pomodoroStore = usePomodoroStore()
 const tasks = ref([])
+const dailyFocusData = ref([])
+const calendarDate = ref(new Date())
+
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+})
 
 const fetchTasks = async () => {
   if (!userStore.user || !userStore.user.id) return
@@ -56,6 +104,31 @@ const fetchTasks = async () => {
   }
 }
 
+const fetchFocusStats = async () => {
+  if (!userStore.user || !userStore.user.id) return
+  try {
+    const data = await getDailyFocusStats(userStore.user.id)
+    dailyFocusData.value = data || []
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const getTasksForDate = (dateStr) => {
+  return tasks.value.filter(task => {
+    if (!task.dueDate) return false
+    // dateStr is usually YYYY-MM-DD from Element Plus
+    // task.dueDate is ISO string
+    const taskDate = new Date(task.dueDate).toISOString().split('T')[0]
+    return taskDate === dateStr
+  })
+}
+
+const getFocusTimeForDate = (dateStr) => {
+  const stat = dailyFocusData.value.find(d => d.date === dateStr)
+  return stat ? stat.totalSeconds : 0
+}
+
 const getStatusType = (status) => {
   const map = {
     'DONE': 'success',
@@ -65,12 +138,33 @@ const getStatusType = (status) => {
   return map[status] || ''
 }
 
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getMonth()+1}/${date.getDate()}`
+}
+
 onMounted(() => {
   fetchTasks()
+  fetchFocusStats()
+  pomodoroStore.fetchTodayCount()
 })
 </script>
 
 <style scoped>
+.dashboard-container {
+  padding-bottom: 20px;
+}
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.date-display {
+  color: #909399;
+  font-size: 1.1rem;
+}
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -80,11 +174,19 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid #f0f0f0;
 }
 .task-item:last-child {
   border-bottom: none;
+}
+.task-info {
+  display: flex;
+  flex-direction: column;
+}
+.task-due {
+  font-size: 12px;
+  color: #909399;
 }
 .completed {
   text-decoration: line-through;
@@ -97,12 +199,60 @@ onMounted(() => {
 }
 .stat-item {
   text-align: center;
-  padding: 20px;
+  padding: 20px 0;
 }
 .stat-number {
-  font-size: 36px;
+  font-size: 48px;
   font-weight: bold;
   color: #409eff;
   margin: 10px 0;
+}
+.stat-subtitle {
+  color: #909399;
+  font-size: 14px;
+}
+.action-buttons {
+  margin-top: 20px;
+}
+.w-100 {
+  width: 100%;
+}
+.mt-20 {
+  margin-top: 20px;
+}
+
+/* Calendar Styles */
+.calendar-card :deep(.el-calendar-table .el-calendar-day) {
+  height: 80px;
+  padding: 5px;
+}
+.calendar-cell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.day-number {
+  font-weight: bold;
+}
+.day-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.task-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #f56c6c;
+  border-radius: 50%;
+  display: inline-block;
+}
+.focus-badge {
+  background-color: #e1f3d8;
+  color: #67c23a;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 </style>

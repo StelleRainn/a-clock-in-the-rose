@@ -17,6 +17,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const completedPomodoros = ref(0)
   const endTime = ref(parseInt(localStorage.getItem('pomodoro_endTime')) || null)
   const savedTimeLeft = ref(parseInt(localStorage.getItem('pomodoro_timeLeft')) || workDuration.value)
+  const selectedTaskId = ref(null) // New: Bind task
   
   // Initialize timeLeft based on persistence
   const timeLeft = ref(savedTimeLeft.value)
@@ -49,12 +50,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     timeLeft.value = 0
     isRunning.value = false
     localStorage.removeItem('pomodoro_endTime')
-    // Optionally handle completion here, but for safety let's just reset or show 0
-    // completeSession() // This might be risky on reload, user might not notice. 
-    // Let's just leave it at 0 and let user click 'reset' or something, or auto-complete?
-    // User requirement: "continuous countdown". If it finished, it finished.
-    // Let's reset to next state to be clean? Or stay at 0.
-    // Let's stay at 0 to show it finished.
   }
 
   // Actions
@@ -120,6 +115,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
         try {
           await savePomodoro({
             userId: userStore.user.id,
+            taskId: selectedTaskId.value, // Bind task
             durationSeconds: workDuration.value,
             status: 'COMPLETED'
           })
@@ -163,6 +159,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     localStorage.setItem('pomodoro_timeLeft', seconds)
   }
 
+  function selectTask(taskId) {
+    selectedTaskId.value = taskId
+  }
+
   async function fetchTodayCount() {
     if (userStore.user && userStore.user.id) {
       try {
@@ -183,12 +183,14 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     completedPomodoros,
     formattedTime,
     progressPercentage,
+    selectedTaskId,
     startTimer,
     pauseTimer,
     resetTimer,
     toggleTimer,
     setMode,
     fetchTodayCount,
-    updateDuration
+    updateDuration,
+    selectTask
   }
 })
