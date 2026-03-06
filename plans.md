@@ -23,12 +23,12 @@
     - [ ] **Stats (统计)**: 集成 ECharts/Chart.js 展示图表。
     - [x] **Auth (认证)**: 登录/注册表单验证。
 
-## Phase 1.5: 细节打磨与体验优化 (Next Milestone)
+## Phase 1.5: 细节打磨与体验优化 (Completed)
 > 目标：在核心功能可用的基础上，提升用户体验和系统稳定性。
 
 - [x] **Task (任务管理) 进阶**:
     - [x] **看板视图 (Kanban View)**: 实现类似 Trello 的拖拽任务管理。
-    - [ ] **任务详情页**: 支持 Markdown 渲染描述，增加标签 (Tags) 管理。
+    - [x] **任务详情页**: 支持 Markdown 渲染描述，增加标签 (Tags) 管理。
     - [ ] **筛选与排序**: 支持按优先级、状态、截止时间排序。
 - [x] **Pomodoro (番茄钟) 进阶**:
     - [x] **任务绑定**: 启动番茄钟时，允许选择关联当前正在进行的任务。
@@ -37,31 +37,39 @@
 - [x] **Dashboard (仪表盘) 增强**:
     - [x] **日历视图**: 在日历上展示每日的任务完成情况和专注时长。
     - [ ] **待办事项提醒**: 临近截止日期的任务高亮显示。
-- [ ] **Settings (设置)**:
-    - [ ] **个人资料**: 修改头像、密码。
-    - [ ] **番茄钟偏好**: 自定义默认工作/休息时长。
 
-## Phase 2: 数据库设计与建模 (Completed)
-> 目标：设计支撑业务的数据库结构。
+## Phase 2.0: 游戏化与个性化 (Completed)
+> 目标：引入游戏化机制激励用户，并提供更多个性化选项，增强用户粘性（广度迭代）。
 
-- [x] **ER 图设计**: 确定 User, Task, PomodoroRecord, Tag 等实体关系。
-- [x] **Schema 实现**: 编写 SQL 建表脚本。
-    - `users`: 用户信息
-    - `tasks`: 任务详情 (title, status, due_date, priority)
-    - `pomodoro_records`: 专注记录 (start_time, duration, linked_task_id)
+- [x] **Gamification (游戏化系统)**:
+    - [x] **等级系统 (Leveling)**: 根据专注时长计算 XP，提升用户等级 (e.g., Novice -> Master)。
+    - [x] **成就徽章 (Achievements)**: 达成特定条件解锁徽章 (e.g., "专注 10 小时", "连续打卡 7 天")。
+    - [x] **连胜纪录 (Streaks)**: 追踪连续登录/专注天数。
+- [x] **Personalization (个性化)**:
+    - [x] **用户资料**: 上传头像、修改昵称、个性签名。
+    - [ ] **全局主题**: 支持浅色/深色模式切换 (Light/Dark Mode)。
+- [x] **Social (社交分享)**:
+    - [x] **专注卡片 (Focus Card)**: 生成精美的“今日总结”图片，包含专注时长、完成任务数，方便分享至社交媒体。
 
-## Phase 3: 后端开发 (Spring Boot) (Completed)
-> 目标：提供 RESTful API，替换前端 Mock 数据。
+## Phase 3: 深度优化与移动端适配 (Next Milestone)
+> 目标：在功能广度覆盖后，深耕细节体验与多端支持。
 
-- [x] **环境配置**: Spring Boot 3.x 初始化, MyBatis/JPA 配置。
-- [x] **API 实现**:
-    - Auth: `/api/auth/login`, `/api/auth/register`
-    - Tasks: `/api/tasks` (CRUD)
-    - Pomodoro: `/api/pomodoro` (Save record)
-    - Stats: `/api/stats/daily` (Daily Focus & Task Status)
-- [ ] **单元测试**: Service 层逻辑验证 (Optional for MVP)。
+- [ ] **Dark Mode (深色模式)**: 
+    - [ ] 设计全局 CSS 变量系统。
+    - [ ] 适配 Element Plus 深色主题。
+    - [ ] 实现跟随系统/手动切换。
+- [ ] **Data Export (数据导出)**: 
+    - [ ] 支持导出专注记录 (CSV/Excel)。
+    - [ ] 支持导出任务清单 (JSON)。
+- [ ] **Mobile Adaptation (移动端适配)**: 
+    - [ ] 优化侧边栏在小屏幕下的折叠逻辑。
+    - [ ] 优化 Dashboard 和 Task List 的卡片布局。
+- [ ] **Advanced Task Features (任务进阶)**:
+    - [ ] **子任务 (Subtasks)**: 任务嵌套。
+    - [ ] **重复任务 (Recurring Tasks)**: 每日/每周重复。
+    - [ ] **标签系统 (Tags)**: 自定义标签与筛选。
 
-## Phase 4: 系统联调与优化 (Ongoing)
+## Phase 4: 系统联调与部署 (Ongoing)
 > 目标：前后端对接，完善系统。
 
 - [x] **接口联调**: 前端 Axios 对接真实后端 API。

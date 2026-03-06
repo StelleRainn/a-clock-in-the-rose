@@ -14,6 +14,9 @@ public class PomodoroService {
     @Autowired
     private PomodoroMapper pomodoroMapper;
 
+    @Autowired
+    private UserStatsService userStatsService;
+
     public PomodoroRecord saveRecord(PomodoroRecord record) {
         if (record.getStartTime() == null) {
             record.setStartTime(LocalDateTime.now().minusSeconds(record.getDurationSeconds()));
@@ -22,6 +25,12 @@ public class PomodoroService {
             record.setEndTime(LocalDateTime.now());
         }
         pomodoroMapper.insert(record);
+
+        // Update User Stats (Gamification)
+        if ("COMPLETED".equals(record.getStatus())) {
+            userStatsService.addFocusTime(record.getUserId(), record.getDurationSeconds());
+        }
+
         return record;
     }
 

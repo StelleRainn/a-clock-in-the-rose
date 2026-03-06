@@ -9,6 +9,13 @@ public class User {
     private String username;
     private String password;
     private String email;
+    // New Profile Fields
+    private String nickname;
+    private String avatarUrl;
+    private String bio;
+    private String gender; // MALE, FEMALE, OTHER
+    private String website;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

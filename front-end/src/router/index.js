@@ -5,6 +5,7 @@ import DashboardView from '../views/dashboard/DashboardView.vue'
 import TaskListView from '../views/tasks/TaskListView.vue'
 import PomodoroTimer from '../views/pomodoro/PomodoroTimer.vue'
 import StatsOverview from '../views/stats/StatsOverview.vue'
+import ProfileSettings from '../views/settings/ProfileSettings.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
           path: 'stats',
           name: 'stats',
           component: StatsOverview
+        },
+        {
+          path: 'profile',
+          name: 'profile',
+          component: ProfileSettings
         }
       ]
     }

@@ -14,7 +14,7 @@
               "type": "markdown",
               "state": {
                 "file": "plans.md",
-                "mode": "source",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
@@ -185,19 +185,19 @@
   },
   "active": "2b3bdc3431a7c044",
   "lastOpenFiles": [
-    "milestone.md",
     "optimized.md",
-    "plans.md",
-    "front-end/src/api/stats.js",
-    "back-end/target/classes/com/stellerainn/backend/controller/PomodoroController.class",
-    "back-end/target/classes/com/stellerainn/backend/controller/AuthController.class",
-    "back-end/target/classes/com/stellerainn/backend/BackEndApplication.class",
+    "milestone.md",
+    "back-end/target/classes/com/stellerainn/backend/service/UserService.class",
     "back-end/target/classes/com/stellerainn/backend/entity/User.class",
     "back-end/target/classes/com/stellerainn/backend/mapper/UserMapper.class",
-    "back-end/target/classes/com/stellerainn/backend/service/UserService.class",
-    "back-end/target/classes/com/stellerainn/backend/common/Result.class",
-    "back-end/target/classes/com/stellerainn/backend/controller/StatsController.class",
-    "back-end/src/main/java/com/stellerainn/backend/controller/StatsController.java",
-    "proposal.md"
+    "front-end/src/views/settings/ProfileSettings.vue",
+    "front-end/src/api/user.js",
+    "back-end/target/classes/com/stellerainn/backend/controller/UserController.class",
+    "back-end/src/main/java/com/stellerainn/backend/controller/UserController.java",
+    "database/profile_update.sql",
+    "back-end/target/classes/com/stellerainn/backend/controller/AuthController.class",
+    "back-end/target/classes/com/stellerainn/backend/BackEndApplication.class",
+    "proposal.md",
+    "plans.md"
   ]
 }

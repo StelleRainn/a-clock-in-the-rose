@@ -40,7 +40,20 @@ CREATE TABLE IF NOT EXISTS pomodoro_records (
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 4. User Stats (Gamification)
+CREATE TABLE IF NOT EXISTS user_stats (
+    user_id BIGINT PRIMARY KEY,
+    level INT DEFAULT 1,
+    current_xp INT DEFAULT 0,
+    next_level_xp INT DEFAULT 100,
+    total_focus_minutes INT DEFAULT 0,
+    streak_days INT DEFAULT 0,
+    last_focus_date DATE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Seed Data (Optional)
-INSERT INTO users (username, password, email) VALUES ('admin', 'admin123', 'admin@example.com');
-INSERT INTO tasks (user_id, title, status, priority) VALUES (1, 'Finish ACIR Proposal', 'DONE', 'HIGH');
-INSERT INTO tasks (user_id, title, status, priority) VALUES (1, 'Implement Frontend', 'IN_PROGRESS', 'HIGH');
+-- Note: Re-run seeds carefully if tables already exist
+INSERT IGNORE INTO users (username, password, email) VALUES ('admin', 'admin123', 'admin@example.com');
+INSERT IGNORE INTO user_stats (user_id) VALUES (1);

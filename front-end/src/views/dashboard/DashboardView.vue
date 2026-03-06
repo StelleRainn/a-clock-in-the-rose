@@ -27,6 +27,10 @@
                   <div v-if="getFocusTimeForDate(data.day) > 0" class="focus-badge">
                     {{ Math.round(getFocusTimeForDate(data.day) / 60) }}m
                   </div>
+                  <!-- Streak Flame Icon -->
+                  <div v-if="isStreakDay(data.day)" class="streak-icon">
+                    <el-icon color="#f56c6c"><Opportunity /></el-icon>
+                  </div>
                 </div>
               </div>
             </template>
@@ -54,6 +58,19 @@
 
       <!-- Right Column: Stats & Quick Actions -->
       <el-col :span="8">
+        <!-- Streak Card -->
+        <el-card class="box-card mb-20 streak-card" v-if="streakDays > 0">
+          <div class="streak-content">
+            <div class="streak-icon-large">
+              <el-icon><Opportunity /></el-icon>
+            </div>
+            <div class="streak-text">
+              <span class="streak-number">{{ streakDays }}</span>
+              <span class="streak-label">Day Streak!</span>
+            </div>
+          </div>
+        </el-card>
+
         <!-- Pomodoro Stats -->
         <el-card class="box-card">
           <template #header>
@@ -80,8 +97,10 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTasks } from '@/api/task'
 import { getDailyFocusStats } from '@/api/stats'
+import { getUserStats } from '@/api/gamification'
 import { useUserStore } from '@/stores/user'
 import { usePomodoroStore } from '@/stores/pomodoro'
+import { Opportunity } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -89,6 +108,7 @@ const pomodoroStore = usePomodoroStore()
 const tasks = ref([])
 const dailyFocusData = ref([])
 const calendarDate = ref(new Date())
+const streakDays = ref(0)
 
 const currentDate = computed(() => {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
@@ -114,11 +134,19 @@ const fetchFocusStats = async () => {
   }
 }
 
+const fetchUserStreak = async () => {
+  if (!userStore.user || !userStore.user.id) return
+  try {
+    const stats = await getUserStats(userStore.user.id)
+    streakDays.value = stats.streakDays || 0
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const getTasksForDate = (dateStr) => {
   return tasks.value.filter(task => {
     if (!task.dueDate) return false
-    // dateStr is usually YYYY-MM-DD from Element Plus
-    // task.dueDate is ISO string
     const taskDate = new Date(task.dueDate).toISOString().split('T')[0]
     return taskDate === dateStr
   })
@@ -127,6 +155,13 @@ const getTasksForDate = (dateStr) => {
 const getFocusTimeForDate = (dateStr) => {
   const stat = dailyFocusData.value.find(d => d.date === dateStr)
   return stat ? stat.totalSeconds : 0
+}
+
+const isStreakDay = (dateStr) => {
+  // Simple visualization: Mark days with focus time as part of streak history
+  // For a true "streak" highlight, we'd need more complex backend logic returning specific streak dates
+  // For now, let's just show the flame if there was focus time > 0
+  return getFocusTimeForDate(dateStr) > 0
 }
 
 const getStatusType = (status) => {
@@ -147,6 +182,7 @@ const formatDateShort = (dateStr) => {
 onMounted(() => {
   fetchTasks()
   fetchFocusStats()
+  fetchUserStreak()
   pomodoroStore.fetchTodayCount()
 })
 </script>
@@ -220,6 +256,9 @@ onMounted(() => {
 .mt-20 {
   margin-top: 20px;
 }
+.mb-20 {
+  margin-bottom: 20px;
+}
 
 /* Calendar Styles */
 .calendar-card :deep(.el-calendar-table .el-calendar-day) {
@@ -254,5 +293,45 @@ onMounted(() => {
   font-size: 10px;
   padding: 2px 4px;
   border-radius: 4px;
+}
+.streak-icon {
+  margin-top: 2px;
+}
+
+/* Streak Card Styles */
+.streak-card {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+  color: white;
+  border: none;
+}
+.streak-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+.streak-icon-large {
+  font-size: 40px;
+  animation: flame 1.5s infinite ease-in-out;
+}
+.streak-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.streak-number {
+  font-size: 32px;
+  font-weight: bold;
+  line-height: 1;
+}
+.streak-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+@keyframes flame {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
 }
 </style>

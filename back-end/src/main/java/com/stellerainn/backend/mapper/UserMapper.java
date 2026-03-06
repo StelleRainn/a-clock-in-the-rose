@@ -1,10 +1,7 @@
 package com.stellerainn.backend.mapper;
 
 import com.stellerainn.backend.entity.User;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface UserMapper {
@@ -18,4 +15,8 @@ public interface UserMapper {
     
     @Select("SELECT * FROM users WHERE id = #{id}")
     User findById(Long id);
+
+    @Update("UPDATE users SET nickname=#{nickname}, avatar_url=#{avatarUrl}, bio=#{bio}, " +
+            "gender=#{gender}, website=#{website}, email=#{email} WHERE id=#{id}")
+    void updateProfile(User user);
 }
