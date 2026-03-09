@@ -51,23 +51,23 @@
 - [x] **Social (社交分享)**:
     - [x] **专注卡片 (Focus Card)**: 生成精美的“今日总结”图片，包含专注时长、完成任务数，方便分享至社交媒体。
 
-## Phase 3: 深度优化与移动端适配 (Next Milestone)
+## Phase 3: 深度优化与移动端适配 (Ongoing)
 > 目标：在功能广度覆盖后，深耕细节体验与多端支持。
 
-- [ ] **Dark Mode (深色模式)**: 
-    - [ ] 设计全局 CSS 变量系统。
-    - [ ] 适配 Element Plus 深色主题。
-    - [ ] 实现跟随系统/手动切换。
-- [ ] **Data Export (数据导出)**: 
-    - [ ] 支持导出专注记录 (CSV/Excel)。
-    - [ ] 支持导出任务清单 (JSON)。
+- [x] **Task Management Advanced (任务管理进阶)**:
+    - [x] **标签系统 (Tags)**: 支持多色标签、创建与筛选。
+    - [x] **高级筛选 (Filtering)**: 支持按标题搜索、按标签筛选。
+    - [x] **智能排序 (Sorting)**: 支持按优先级、状态、时间排序（升/降序）。
+    - [x] **子任务 (Subtasks)**: 无限层级子任务，支持进度条展示。
+- [x] **Data Export (数据导出)**: 
+    - [x] 支持导出专注记录 (CSV)。
+    - [x] 支持导出任务清单 (CSV)。
 - [ ] **Mobile Adaptation (移动端适配)**: 
     - [ ] 优化侧边栏在小屏幕下的折叠逻辑。
     - [ ] 优化 Dashboard 和 Task List 的卡片布局。
-- [ ] **Advanced Task Features (任务进阶)**:
-    - [ ] **子任务 (Subtasks)**: 任务嵌套。
-    - [ ] **重复任务 (Recurring Tasks)**: 每日/每周重复。
-    - [ ] **标签系统 (Tags)**: 自定义标签与筛选。
+- [ ] **Dark Mode (深色模式)**: 
+    - [ ] 设计全局 CSS 变量系统。
+    - [ ] 适配 Element Plus 深色主题。
 
 ## Phase 4: 系统联调与部署 (Ongoing)
 > 目标：前后端对接，完善系统。

@@ -1,6 +1,6 @@
 <template>
   <div class="settings-container">
-    <el-card>
+    <el-card class="mb-20">
       <template #header>
         <div class="card-header">
           <span>Edit Profile</span>
@@ -45,6 +45,26 @@
         </el-form-item>
       </el-form>
     </el-card>
+
+    <!-- Data Export Section -->
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>Data Export</span>
+        </div>
+      </template>
+      <div class="export-section">
+        <p class="export-desc">Download your personal data in CSV format.</p>
+        <div class="export-buttons">
+          <el-button @click="handleExportTasks" :loading="exportingTasks" icon="List">
+            Export Tasks
+          </el-button>
+          <el-button @click="handleExportPomodoro" :loading="exportingPomodoro" icon="Timer">
+            Export Focus Records
+          </el-button>
+        </div>
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -52,10 +72,14 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { getUserProfile, updateUserProfile } from '@/api/user'
+import { exportTasks, exportPomodoro } from '@/api/export'
 import { ElMessage } from 'element-plus'
+import { List, Timer } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
+const exportingTasks = ref(false)
+const exportingPomodoro = ref(false)
 
 const form = reactive({
   username: '',
@@ -86,10 +110,46 @@ const saveProfile = async () => {
   try {
     await updateUserProfile(userStore.user.id, form)
     ElMessage.success('Profile updated successfully')
-    // Update local user store nickname if needed
-    // userStore.updateUser({ ...userStore.user, nickname: form.nickname })
   } catch (e) {
     ElMessage.error('Failed to update profile')
+  }
+}
+
+const downloadFile = (data, filename) => {
+  const url = window.URL.createObjectURL(new Blob([data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const handleExportTasks = async () => {
+  if (!userStore.user || !userStore.user.id) return
+  exportingTasks.value = true
+  try {
+    const data = await exportTasks(userStore.user.id)
+    downloadFile(data, 'my_tasks.csv')
+    ElMessage.success('Tasks exported successfully')
+  } catch (e) {
+    ElMessage.error('Failed to export tasks')
+  } finally {
+    exportingTasks.value = false
+  }
+}
+
+const handleExportPomodoro = async () => {
+  if (!userStore.user || !userStore.user.id) return
+  exportingPomodoro.value = true
+  try {
+    const data = await exportPomodoro(userStore.user.id)
+    downloadFile(data, 'my_focus_records.csv')
+    ElMessage.success('Focus records exported successfully')
+  } catch (e) {
+    ElMessage.error('Failed to export records')
+  } finally {
+    exportingPomodoro.value = false
   }
 }
 
@@ -111,5 +171,16 @@ onMounted(() => {
 }
 .avatar-preview {
   margin-top: 10px;
+}
+.mb-20 {
+  margin-bottom: 20px;
+}
+.export-desc {
+  color: #606266;
+  margin-bottom: 20px;
+}
+.export-buttons {
+  display: flex;
+  gap: 15px;
 }
 </style>

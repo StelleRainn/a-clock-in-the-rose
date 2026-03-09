@@ -1,9 +1,14 @@
 package com.stellerainn.backend.service;
 
+import com.stellerainn.backend.entity.Subtask;
+import com.stellerainn.backend.entity.Tag;
 import com.stellerainn.backend.entity.Task;
+import com.stellerainn.backend.mapper.SubtaskMapper;
+import com.stellerainn.backend.mapper.TagMapper;
 import com.stellerainn.backend.mapper.TaskMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -12,19 +17,49 @@ public class TaskService {
 
     @Autowired
     private TaskMapper taskMapper;
+    
+    @Autowired
+    private TagMapper tagMapper;
+
+    @Autowired
+    private SubtaskMapper subtaskMapper;
 
     public List<Task> getTasksByUserId(Long userId) {
-        return taskMapper.findByUserId(userId);
+        List<Task> tasks = taskMapper.findByUserId(userId);
+        for (Task task : tasks) {
+            task.setTags(tagMapper.findTagsByTaskId(task.getId()));
+            task.setSubtasks(subtaskMapper.findByTaskId(task.getId()));
+        }
+        return tasks;
     }
 
+    @Transactional
     public Task createTask(Task task) {
         taskMapper.insert(task);
+        updateTaskTags(task);
+        // Subtasks are usually added after task creation or as a separate step, 
+        // but if provided here, we could save them. 
+        // For simplicity, we'll stick to basic creation first.
         return task;
     }
 
+    @Transactional
     public Task updateTask(Task task) {
         taskMapper.update(task);
-        return taskMapper.findById(task.getId());
+        updateTaskTags(task);
+        Task updatedTask = taskMapper.findById(task.getId());
+        updatedTask.setTags(tagMapper.findTagsByTaskId(task.getId()));
+        updatedTask.setSubtasks(subtaskMapper.findByTaskId(task.getId()));
+        return updatedTask;
+    }
+
+    private void updateTaskTags(Task task) {
+        if (task.getTags() != null) {
+            tagMapper.removeAllTaskTags(task.getId());
+            for (Tag tag : task.getTags()) {
+                tagMapper.addTaskTag(task.getId(), tag.getId());
+            }
+        }
     }
 
     public void deleteTask(Long id) {
@@ -32,6 +67,25 @@ public class TaskService {
     }
     
     public Task getTaskById(Long id) {
-        return taskMapper.findById(id);
+        Task task = taskMapper.findById(id);
+        if (task != null) {
+            task.setTags(tagMapper.findTagsByTaskId(id));
+            task.setSubtasks(subtaskMapper.findByTaskId(id));
+        }
+        return task;
+    }
+
+    // Subtask Methods
+    public Subtask addSubtask(Subtask subtask) {
+        subtaskMapper.insert(subtask);
+        return subtask;
+    }
+
+    public void updateSubtask(Subtask subtask) {
+        subtaskMapper.update(subtask);
+    }
+
+    public void deleteSubtask(Long id) {
+        subtaskMapper.delete(id);
     }
 }

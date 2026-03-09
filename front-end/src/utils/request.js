@@ -24,6 +24,11 @@ service.interceptors.request.use(
 // Response interceptor
 service.interceptors.response.use(
   (response) => {
+    // Check if responseType is 'blob' (binary data)
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
+
     const res = response.data
     // Assuming backend returns { code: 200, data: ..., message: ... }
     if (res.code !== 200) {

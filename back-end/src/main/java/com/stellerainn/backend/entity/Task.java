@@ -2,6 +2,7 @@ package com.stellerainn.backend.entity;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class Task {
@@ -14,4 +15,8 @@ public class Task {
     private LocalDateTime dueDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // Relations
+    private List<Tag> tags;
+    private List<Subtask> subtasks;
 }
