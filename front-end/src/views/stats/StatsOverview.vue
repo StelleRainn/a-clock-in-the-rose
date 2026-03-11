@@ -75,6 +75,14 @@
       <div ref="heatmapChartRef" style="height: 200px;"></div>
     </el-card>
 
+    <!-- Focus Time (Bar) -->
+    <el-card class="mb-20">
+      <template #header>
+        <span>Focus Time (Last 7 Days)</span>
+      </template>
+      <div ref="focusChartRef" style="height: 300px;"></div>
+    </el-card>
+
     <!-- Achievement Section -->
     <el-card class="mb-20">
       <template #header>
@@ -107,9 +115,9 @@
       <el-col :span="12">
         <el-card>
           <template #header>
-            <span>Focus Time (Last 7 Days)</span>
+            <span>Focus Distribution by Tag</span>
           </template>
-          <div ref="focusChartRef" style="height: 300px;"></div>
+          <div ref="tagChartRef" style="height: 300px;"></div>
         </el-card>
       </el-col>
       <el-col :span="12">
@@ -128,7 +136,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import * as echarts from 'echarts'
 import html2canvas from 'html2canvas'
-import { getDailyFocusStats, getTaskStatusStats } from '@/api/stats'
+import { getDailyFocusStats, getTaskStatusStats, getTagFocusStats } from '@/api/stats'
 import { getUserAchievements, getUserStats } from '@/api/gamification'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
@@ -139,9 +147,11 @@ const themeStore = useThemeStore()
 const focusChartRef = ref(null)
 const taskChartRef = ref(null)
 const heatmapChartRef = ref(null)
+const tagChartRef = ref(null)
 let focusChart = null
 let taskChart = null
 let heatmapChart = null
+let tagChart = null
 
 const achievements = ref([])
 const achievementsLoading = ref(false)
@@ -223,88 +233,72 @@ const generateShareCard = async () => {
   }
 }
 
-const updateHeatmapOptions = () => {
-  if (!heatmapChart) return
-  
+const updateChartsTheme = () => {
   const isDark = themeStore.isDark
-  
-  // Colors
-  // Light: Empty=#ebedf0, Heatmap=['#9be9a8', '#40c463', '#30a14e', '#216e39']
-  // Optimized Light (Deeper start): ['#ebedf0', '#40c463', '#30a14e', '#216e39', '#10441c']
-  
-  // Dark: Empty=#2d2d2d (gray), Heatmap=['#0e4429', '#006d32', '#26a641', '#39d353'] (Github Dark)
-  // Actually Github Dark uses: #161b22 (empty), #0e4429, #006d32, #26a641, #39d353
-  
-  // User Feedback: "Ensure even 1 minute is visible"
-  // We need to adjust the first color in the range to be distinct from empty color
-  // Light Mode Empty: #ebedf0. First Green: #9be9a8. (Good contrast)
-  // Dark Mode Empty: #2d2d2d. First Green: #0e4429. (Might be too dark)
-  
-  // Let's brighten the first step for Dark Mode slightly
-  // Using GitHub's actual dark mode palette: #161b22 (bg), #0e4429 (L1), #006d32 (L2), #26a641 (L3), #39d353 (L4)
-  // But our bg is #2d2d2d (lighter gray). 
-  // #0e4429 is very dark green. On #2d2d2d it might look black.
-  // Let's try a lighter green for L1: #1a7f37
-  
-  const finalDarkColors = ['#2d2d2d', '#238636', '#2ea043', '#3fb950', '#a2d9a7'] // Lighter range for better visibility
-
-  // Re-evaluating Light Mode based on "Deeper start" request
-  // Previous: #6cd675 (User thought it was too light? No, "can be deeper")
-  // User said: "colors (especially start color...) can be deeper, current is too light"
-  // So instead of #9be9a8, let's use something closer to #40c463 as start?
-  // Let's shift the whole spectrum darker.
-  const lightColorsDeep = ['#ebedf0', '#40c463', '#30a14e', '#216e39', '#0e4429']
-
-  const colors = isDark ? finalDarkColors : lightColorsDeep
-  const borderColor = isDark ? '#1a1a1a' : '#ffffff'
   const textColor = isDark ? '#ccc' : '#333'
-  const splitLineColor = isDark ? '#333' : '#ccc'
+  const borderColor = isDark ? '#1a1a1a' : '#fff'
 
-  heatmapChart.setOption({
-    visualMap: {
-      min: 0,
-      max: 120,
-      inRange: {
-        color: colors
+  // Update Heatmap
+  if (heatmapChart) {
+    // Colors
+    const lightColorsDeep = ['#ebedf0', '#40c463', '#30a14e', '#216e39', '#0e4429']
+    const finalDarkColors = ['#2d2d2d', '#238636', '#2ea043', '#3fb950', '#a2d9a7']
+    const colors = isDark ? finalDarkColors : lightColorsDeep
+    const splitLineColor = isDark ? '#333' : '#ccc'
+    const calBorderColor = isDark ? '#1a1a1a' : '#ffffff'
+
+    heatmapChart.setOption({
+      visualMap: {
+        inRange: { color: colors },
+        textStyle: { color: textColor }
       },
-      textStyle: {
-        color: textColor
+      calendar: {
+        itemStyle: { borderColor: calBorderColor },
+        splitLine: { lineStyle: { color: splitLineColor } },
+        dayLabel: { color: textColor },
+        monthLabel: { color: textColor }
+      },
+      series: {
+        itemStyle: { borderColor: calBorderColor }
       }
-    },
-    calendar: {
-      itemStyle: {
-        borderColor: borderColor,
-        borderWidth: 3
-      },
-      splitLine: {
-        lineStyle: {
-          color: splitLineColor
-        }
-      },
-      dayLabel: {
-        color: textColor
-      },
-      monthLabel: {
-        color: textColor
-      }
-    },
-    series: {
-      type: 'heatmap',
-      coordinateSystem: 'calendar',
-      itemStyle: {
-        borderRadius: 3,
-        borderColor: borderColor,
-        borderWidth: 3
-      }
-    }
-  })
+    })
+  }
+
+  // Update Task Chart
+  if (taskChart) {
+    taskChart.setOption({
+      legend: { textStyle: { color: textColor } },
+      series: [{ itemStyle: { borderColor: borderColor } }]
+    })
+  }
+
+  // Update Tag Chart
+  if (tagChart) {
+    tagChart.setOption({
+      legend: { textStyle: { color: textColor } },
+      // Tag Chart doesn't have borders usually, but we can check
+    })
+  }
+  
+  // Update Focus Chart (Bar)
+  if (focusChart) {
+      focusChart.setOption({
+          xAxis: {
+              axisLabel: { color: textColor },
+              nameTextStyle: { color: textColor }
+          },
+          yAxis: {
+              axisLabel: { color: textColor },
+              nameTextStyle: { color: textColor }
+          },
+          legend: { textStyle: { color: textColor } }
+      })
+  }
 }
 
 // Watch theme changes
 watch(() => themeStore.isDark, () => {
-  updateHeatmapOptions()
-  // Also update other charts if needed (text colors)
-  // focusChart?.setOption(...)
+  updateChartsTheme()
 })
 
 const initCharts = async () => {
@@ -431,13 +425,16 @@ const initCharts = async () => {
       }))
 
       taskChart.hideLoading()
+      const isDark = themeStore.isDark
+      
       taskChart.setOption({
         tooltip: {
           trigger: 'item'
         },
         legend: {
           top: '5%',
-          left: 'center'
+          left: 'center',
+          textStyle: { color: isDark ? '#ccc' : '#333' }
         },
         series: [
           {
@@ -447,7 +444,7 @@ const initCharts = async () => {
             avoidLabelOverlap: false,
             itemStyle: {
               borderRadius: 10,
-              borderColor: '#fff',
+              borderColor: isDark ? '#1a1a1a' : '#fff',
               borderWidth: 2
             },
             label: {
@@ -471,12 +468,59 @@ const initCharts = async () => {
       taskChart.hideLoading()
     }
   }
+
+  // 4. Fetch & Render Tag Chart
+  if (tagChartRef.value) {
+    tagChart = echarts.init(tagChartRef.value)
+    tagChart.showLoading()
+
+    try {
+      const tagData = await getTagFocusStats(userStore.user.id)
+      const pieData = tagData.map(item => ({
+        name: item.tagName,
+        value: Math.round(item.totalSeconds / 60), // Convert to minutes
+        itemStyle: { color: item.tagColor }
+      }))
+
+      tagChart.hideLoading()
+      const isDark = themeStore.isDark
+      
+      tagChart.setOption({
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c} mins ({d}%)'
+        },
+        legend: {
+          top: '5%',
+          left: 'center',
+          textStyle: { color: isDark ? '#ccc' : '#333' }
+        },
+        series: [
+          {
+            name: 'Focus by Tag',
+            type: 'pie',
+            radius: [20, 100],
+            center: ['50%', '50%'],
+            roseType: 'radius',
+            itemStyle: {
+              borderRadius: 5
+            },
+            data: pieData
+          }
+        ]
+      })
+    } catch (e) {
+      console.error(e)
+      tagChart.hideLoading()
+    }
+  }
 }
 
 const resizeCharts = () => {
   focusChart?.resize()
   taskChart?.resize()
   heatmapChart?.resize()
+  tagChart?.resize()
 }
 
 onMounted(() => {
@@ -490,6 +534,7 @@ onUnmounted(() => {
   focusChart?.dispose()
   taskChart?.dispose()
   heatmapChart?.dispose()
+  tagChart?.dispose()
 })
 </script>
 

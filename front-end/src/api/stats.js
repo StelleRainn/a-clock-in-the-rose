@@ -15,3 +15,11 @@ export function getTaskStatusStats(userId) {
     params: { userId }
   })
 }
+
+export function getTagFocusStats(userId) {
+  return request({
+    url: '/stats/tag-focus',
+    method: 'get',
+    params: { userId }
+  })
+}

@@ -1,6 +1,7 @@
 package com.stellerainn.backend.service;
 
 import com.stellerainn.backend.entity.DailyStats;
+import com.stellerainn.backend.entity.TagFocusStats;
 import com.stellerainn.backend.entity.TaskStats;
 import com.stellerainn.backend.mapper.PomodoroMapper;
 import com.stellerainn.backend.mapper.TaskMapper;
@@ -24,5 +25,9 @@ public class StatsService {
 
     public List<TaskStats> getTaskStatusStats(Long userId) {
         return taskMapper.getTaskStatusStats(userId);
+    }
+
+    public List<TagFocusStats> getTagFocusStats(Long userId) {
+        return pomodoroMapper.getTagFocusStats(userId);
     }
 }

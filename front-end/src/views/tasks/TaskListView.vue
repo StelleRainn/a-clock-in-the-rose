@@ -54,12 +54,13 @@
       <el-tabs v-model="activeName">
         <el-tab-pane label="List View" name="list">
           <el-table 
-            :data="filteredTasks" 
+            :data="paginatedTasks" 
             style="width: 100%" 
             v-loading="loading" 
             row-key="id"
             @row-click="handleEdit"
             class="draggable-table"
+            :row-class-name="tableRowClassName"
           >
             <el-table-column type="expand">
               <template #default="props">
@@ -145,20 +146,34 @@
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- Pagination -->
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="filteredTasks.length"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
+          </div>
         </el-tab-pane>
         <el-tab-pane label="Kanban View" name="kanban">
           <div class="kanban-board">
             <div class="kanban-column" v-for="status in ['TODO', 'IN_PROGRESS', 'DONE']" :key="status">
               <div class="column-header">
                 <h3>{{ formatStatus(status) }}</h3>
-                <el-tag :type="getStatusType(status)">{{ getTasksByStatus(status).length }}</el-tag>
+                <el-tag :type="getStatusType(status)">{{ kanbanColumns[status].length }}</el-tag>
               </div>
               <draggable 
-                :list="getTasksByStatus(status)" 
+                :list="kanbanColumns[status]" 
                 group="tasks" 
                 item-key="id"
-                @change="(evt) => handleDragChange(evt, status)"
+                @change="(evt) => handleKanbanChange(evt, status)"
                 class="draggable-area"
+                :disabled="isDragDisabled"
               >
                 <template #item="{ element }">
                   <div class="kanban-card" @click="handleEdit(element)" :class="{'overdue-card': isOverdue(element), 'neardue-card': isNearDue(element)}">
@@ -285,7 +300,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, computed } from 'vue'
+import { ref, onMounted, reactive, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTasks, createTask, updateTask, deleteTask, reorderTasks } from '@/api/task'
 import { getTags, createTag } from '@/api/tag'
@@ -294,7 +309,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable'
 import Sortable from 'sortablejs'
-import { Search, SortUp, SortDown, Delete, Warning, WarningFilled, RefreshLeft } from '@element-plus/icons-vue'
+import { SortUp, SortDown, Delete, Warning, WarningFilled, RefreshLeft, Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const activeName = ref('list')
@@ -419,6 +434,9 @@ const isNearDue = (task) => {
   return diffHours > 0 && diffHours <= 24 // Within 24 hours
 }
 
+const currentPage = ref(1)
+const pageSize = ref(10)
+
 // Computed Filtered Tasks
 const filteredTasks = computed(() => {
   let result = [...tableData.value]
@@ -433,35 +451,50 @@ const filteredTasks = computed(() => {
   if (selectedFilterTags.value.length > 0) {
     result = result.filter(task => {
       if (!task.tags) return false
-      // Check if task has AT LEAST one of the selected tags (OR logic)
-      // Or ALL? Usually OR is better for filtering. Let's use OR.
-      // Actually, standard filtering often implies "has any of these tags"
       const taskTagIds = task.tags.map(t => t.id)
       return selectedFilterTags.value.some(id => taskTagIds.includes(id))
     })
   }
 
   // 3. Sort
+  // Separate Done and Not Done
+  const notDone = result.filter(t => t.status !== 'DONE')
+  const done = result.filter(t => t.status === 'DONE')
+
+  // Sort Not Done
   if (sortBy.value === 'manual') {
-    // Already sorted by position from backend or maintain current order
-    // However, if filters are active, we can't really "manual sort" effectively
-    // But we return result as is (which is sorted by position from backend initially)
-    return result
+    // Keep backend order (position)
+    // But we need to ensure they are sorted by position just in case
+    // Assuming backend returns sorted by position
+  } else {
+    sortTasks(notDone)
   }
 
-  result.sort((a, b) => {
+  // Sort Done (Always by Date desc or user pref?)
+  // User req: "In Done tasks, sort by date"
+  // Let's sort done tasks by Due Date descending (most recent due first) or Created At
+  done.sort((a, b) => {
+    const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0
+    const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0
+    return dateB - dateA // Descending
+  })
+
+  // Merge: Not Done + Done (Done at bottom)
+  return [...notDone, ...done]
+})
+
+const sortTasks = (list) => {
+  list.sort((a, b) => {
     let valA, valB
     
     switch (sortBy.value) {
       case 'priority': {
-        // Custom order: HIGH > MEDIUM > LOW
         const pMap = { 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 }
         valA = pMap[a.priority] || 0
         valB = pMap[b.priority] || 0
         break
       }
       case 'status': {
-        // Custom order: TODO > IN_PROGRESS > DONE
         const sMap = { 'TODO': 1, 'IN_PROGRESS': 2, 'DONE': 3 }
         valA = sMap[a.status] || 0
         valB = sMap[b.status] || 0
@@ -481,9 +514,27 @@ const filteredTasks = computed(() => {
     if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1
     return 0
   })
+}
 
-  return result
+const paginatedTasks = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredTasks.value.slice(start, end)
 })
+
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  currentPage.value = 1 // Reset to first page
+}
+
+const handleCurrentChange = (val) => {
+  currentPage.value = val
+}
+
+const tableRowClassName = ({ row }) => {
+  return row.status === 'DONE' ? 'done-row' : ''
+}
+
 
 const toggleSortOrder = () => {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -513,21 +564,34 @@ const initSortable = () => {
 
   sortableInstance = Sortable.create(table, {
     handle: '.el-table__row', // Drag whole row
+    filter: '.done-row', // Disable dragging for done rows
     animation: 150,
+    onMove: (evt) => {
+      // Prevent dragging INTO a done row (or swapping with it)
+      if (evt.related.classList.contains('done-row')) {
+        return false
+      }
+      return true
+    },
     onEnd: async ({ newIndex, oldIndex }) => {
       if (newIndex === oldIndex) return
       
-      // Move item in local array
-      const targetRow = filteredTasks.value.splice(oldIndex, 1)[0]
-      filteredTasks.value.splice(newIndex, 0, targetRow)
+      // Check if moving into Done section
+      const currentList = paginatedTasks.value
+      const firstDoneIndex = currentList.findIndex(t => t.status === 'DONE')
       
-      // Since filteredTasks is computed, we should modify tableData actually?
-      // But tableData is the source. 
-      // If we are in 'manual' mode and no filters, filteredTasks IS tableData (reference copy?)
-      // Actually filteredTasks returns a NEW array: `let result = [...tableData.value]`
-      // So modifying filteredTasks won't affect tableData or trigger re-render properly if it's computed.
+      if (firstDoneIndex !== -1 && newIndex >= firstDoneIndex) {
+        ElMessage.warning('Cannot drag tasks into Done section')
+        // Force update to revert DOM
+        const temp = [...tableData.value]
+        tableData.value = []
+        nextTick(() => {
+          tableData.value = temp
+        })
+        return
+      }
       
-      // Correct approach: Modify tableData directly
+      // Modify tableData directly
       const movedItem = tableData.value.splice(oldIndex, 1)[0]
       tableData.value.splice(newIndex, 0, movedItem)
 
@@ -536,7 +600,6 @@ const initSortable = () => {
       
       try {
         await reorderTasks(newOrderIds)
-        // ElMessage.success('Order updated')
       } catch {
         ElMessage.error('Failed to update order')
         fetchTasks() // Revert
@@ -546,7 +609,7 @@ const initSortable = () => {
 }
 
 // Watchers to re-init or destroy sortable
-import { watch, nextTick } from 'vue'
+import { watch } from 'vue'
 
 watch([sortBy, searchQuery, selectedFilterTags, activeName, loading], () => {
   nextTick(() => {
@@ -724,31 +787,93 @@ const formatStatus = (status) => {
   return map[status] || status
 }
 
-// Kanban Helpers
-// IMPORTANT: Kanban view should ALSO reflect filters? 
-// The user request specifically mentioned "List View", but it's nice if Kanban also filters.
-// Let's use filteredTasks for Kanban too!
-const getTasksByStatus = (status) => {
-  return filteredTasks.value.filter(task => task.status === status)
-}
+const isDragDisabled = computed(() => {
+  return searchQuery.value || selectedFilterTags.value.length > 0
+})
 
-const handleDragChange = async (evt, newStatus) => {
+// Kanban Logic
+const kanbanColumns = reactive({
+  'TODO': [],
+  'IN_PROGRESS': [],
+  'DONE': []
+})
+
+// Sync Filtered Tasks to Kanban Columns
+watch(filteredTasks, (tasks) => {
+  // We only sync if NOT dragging (to avoid jitter), but here we rebuild columns
+  // To preserve drag state, draggable handles the array mutation.
+  // But if filters change, we MUST rebuild.
+  // A simple strategy: Always rebuild on filter/data change.
+  
+  const groups = {
+    'TODO': [],
+    'IN_PROGRESS': [],
+    'DONE': []
+  }
+  
+  tasks.forEach(t => {
+    if (groups[t.status]) groups[t.status].push(t)
+  })
+  
+  // Sort each group
+  Object.keys(groups).forEach(status => {
+    groups[status].sort((a, b) => {
+      // 1. Position (Asc)
+      if (a.position !== b.position) return a.position - b.position
+      
+      // 2. Due Date (Asc, null last)
+      const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+      const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+      if (dateA !== dateB) return dateA - dateB
+      
+      // 3. Priority (High to Low)
+      const pMap = { 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 }
+      return (pMap[b.priority] || 0) - (pMap[a.priority] || 0)
+    })
+  })
+  
+  kanbanColumns['TODO'] = groups['TODO']
+  kanbanColumns['IN_PROGRESS'] = groups['IN_PROGRESS']
+  kanbanColumns['DONE'] = groups['DONE']
+}, { deep: true, immediate: true })
+
+const handleKanbanChange = async (evt, status) => {
+  // Handle Move (Reorder in same column)
+  if (evt.moved) {
+    const newOrderIds = kanbanColumns[status].map(t => t.id)
+    try {
+      await reorderTasks(newOrderIds)
+      // ElMessage.success('Order updated')
+    } catch {
+      ElMessage.error('Failed to update order')
+    }
+  }
+  
+  // Handle Add (Move from another column)
   if (evt.added) {
     const task = evt.added.element
-    // Optimistic update locally first
-    task.status = newStatus
     
-    // Call API to update status
+    // 1. Update Status
+    task.status = status
+    
+    // 2. Update Position (Send full list order of new column)
+    const newOrderIds = kanbanColumns[status].map(t => t.id)
+    
     try {
-      await updateTask(task.id, { ...task, status: newStatus, userId: userStore.user.id })
-      // No need to fetchTasks() if optimistic update works, but for safety we can
-      // fetchTasks() 
+      // We can do both in parallel or sequential
+      // Update status first
+      await updateTask(task.id, { ...task, status: status, userId: userStore.user.id })
+      // Then reorder
+      await reorderTasks(newOrderIds)
     } catch {
-      ElMessage.error('Failed to update task status')
-      fetchTasks() // Revert on error
+      ElMessage.error('Failed to update task')
+      fetchTasks() // Revert
     }
   }
 }
+
+// Old helpers removal (getTasksByStatus, handleDragChange)
+// ... (replaced by above)
 
 onMounted(() => {
   fetchTasks()
@@ -784,6 +909,7 @@ onMounted(() => {
   padding: 10px;
   display: flex;
   flex-direction: column;
+  max-height: calc(100vh - 220px); /* Limit height */
 }
 .column-header {
   display: flex;
@@ -800,7 +926,22 @@ onMounted(() => {
 .draggable-area {
   flex: 1;
   min-height: 100px;
+  overflow-y: auto; /* Enable scrolling */
+  padding-right: 5px; /* Space for scrollbar */
 }
+
+/* Custom Scrollbar for draggable area */
+.draggable-area::-webkit-scrollbar {
+  width: 6px;
+}
+.draggable-area::-webkit-scrollbar-thumb {
+  background-color: var(--el-border-color);
+  border-radius: 3px;
+}
+.draggable-area::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
 .kanban-card {
   background-color: var(--el-bg-color);
   border-radius: 4px;
@@ -922,5 +1063,17 @@ onMounted(() => {
 }
 .kanban-card.neardue-card {
   border-left: 3px solid #e6a23c;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Done Row Style for Drag Disable */
+:deep(.el-table .done-row) {
+  opacity: 0.7;
+  background-color: var(--el-fill-color-lighter);
 }
 </style>

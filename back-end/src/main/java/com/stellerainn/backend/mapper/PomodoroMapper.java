@@ -2,6 +2,7 @@ package com.stellerainn.backend.mapper;
 
 import com.stellerainn.backend.entity.DailyStats;
 import com.stellerainn.backend.entity.PomodoroRecord;
+import com.stellerainn.backend.entity.TagFocusStats;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -33,4 +34,13 @@ public interface PomodoroMapper {
             "GROUP BY DATE(start_time) " +
             "ORDER BY date ASC")
     List<DailyStats> getDailyFocusTime(Long userId);
+
+    @Select("SELECT t.name as tagName, t.color as tagColor, SUM(pr.duration_seconds) as totalSeconds " +
+            "FROM pomodoro_records pr " +
+            "JOIN task_tags tt ON pr.task_id = tt.task_id " +
+            "JOIN tags t ON tt.tag_id = t.id " +
+            "WHERE pr.user_id = #{userId} AND pr.status = 'COMPLETED' " +
+            "GROUP BY t.id, t.name, t.color " +
+            "ORDER BY totalSeconds DESC")
+    List<TagFocusStats> getTagFocusStats(Long userId);
 }

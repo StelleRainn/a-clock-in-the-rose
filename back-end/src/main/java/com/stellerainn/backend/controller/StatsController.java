@@ -2,6 +2,7 @@ package com.stellerainn.backend.controller;
 
 import com.stellerainn.backend.common.Result;
 import com.stellerainn.backend.entity.DailyStats;
+import com.stellerainn.backend.entity.TagFocusStats;
 import com.stellerainn.backend.entity.TaskStats;
 import com.stellerainn.backend.service.StatsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,5 +25,10 @@ public class StatsController {
     @GetMapping("/task-status")
     public Result<List<TaskStats>> getTaskStatusStats(@RequestParam Long userId) {
         return Result.success(statsService.getTaskStatusStats(userId));
+    }
+
+    @GetMapping("/tag-focus")
+    public Result<List<TagFocusStats>> getTagFocusStats(@RequestParam Long userId) {
+        return Result.success(statsService.getTagFocusStats(userId));
     }
 }
