@@ -1,0 +1,561 @@
+<template>
+  <section 
+    class="timer-section" 
+    :class="[
+      { 'ui-hidden': isUIHidden },
+      `hero-theme-${currentHeroTheme}`
+    ]"
+    :style="heroThemeStyles"
+  >
+    <!-- Hero Background -->
+    <div class="hero-bg" :style="bgStyle">
+      <div 
+        class="bg-overlay"
+        :style="{ backgroundColor: `rgba(0,0,0,${pomodoroStore.bgOverlayOpacity})` }"
+      ></div>
+    </div>
+
+    <div class="timer-content">
+      <!-- Mode Toggles -->
+      <div class="mode-toggles">
+        <button 
+          class="mode-btn" 
+          :class="{ active: pomodoroStore.currentMode === 'pomodoro' }"
+          :disabled="pomodoroStore.isRunning"
+          @click="pomodoroStore.setMode('pomodoro')"
+        >
+          pomodoro
+        </button>
+        <button 
+          class="mode-btn" 
+          :class="{ active: pomodoroStore.currentMode === 'short-break' }"
+          :disabled="pomodoroStore.isRunning"
+          @click="pomodoroStore.setMode('short-break')"
+        >
+          short break
+        </button>
+        <button 
+          class="mode-btn" 
+          :class="{ active: pomodoroStore.currentMode === 'long-break' }"
+          :disabled="pomodoroStore.isRunning"
+          @click="pomodoroStore.setMode('long-break')"
+        >
+          long break
+        </button>
+      </div>
+
+      <!-- Main Timer -->
+      <div class="timer-display">
+        <h1 class="timer-digits">{{ pomodoroStore.formattedTime }}</h1>
+      </div>
+
+      <!-- Current Task -->
+      <div class="current-task">
+        <el-dropdown 
+          trigger="click" 
+          :disabled="pomodoroStore.isRunning"
+          @command="handleTaskSelect"
+        >
+          <div class="task-chip" :class="{ disabled: pomodoroStore.isRunning }">
+            <span class="task-icon">⚡</span>
+            <span class="task-text">{{ currentTaskTitle || 'Select a task to focus' }}</span>
+            <el-icon v-if="!pomodoroStore.isRunning" class="dropdown-icon"><ArrowDown /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item 
+                v-for="task in pendingTasks" 
+                :key="task.id" 
+                :command="task.id"
+              >
+                {{ task.title }}
+              </el-dropdown-item>
+              <el-dropdown-item divided command="clear">Clear Selection</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+
+      <!-- Controls -->
+      <div class="timer-controls">
+        <el-button 
+          class="control-btn main-action"
+          :class="{ active: pomodoroStore.isRunning }"
+          @click="pomodoroStore.toggleTimer()"
+        >
+          {{ pomodoroStore.isRunning ? 'PAUSE' : 'START' }}
+        </el-button>
+        
+        <el-button 
+          class="control-btn icon-only"
+          circle
+          @click="pomodoroStore.resetTimer()"
+          :disabled="pomodoroStore.isRunning"
+        >
+          <el-icon :size="20"><Refresh /></el-icon>
+        </el-button>
+
+        <el-button 
+          class="control-btn icon-only"
+          circle
+          @click="showSettings = true"
+        >
+          <el-icon :size="20"><Setting /></el-icon>
+        </el-button>
+      </div>
+
+      <!-- Zen Note -->
+      <div class="zen-note">
+        <input 
+          v-model="zenNote" 
+          placeholder="Capture a thought..." 
+          @keyup.enter="saveZenNote"
+          class="zen-input"
+        />
+      </div>
+
+      <!-- Scroll Indicator -->
+      <div class="scroll-indicator" @click="$emit('scroll-down')">
+        <el-icon><ArrowDown /></el-icon>
+      </div>
+    </div>
+
+    <!-- Settings Dialog -->
+    <el-dialog 
+      v-model="showSettings" 
+      title="Settings" 
+      width="600px" 
+      append-to-body
+      class="settings-modal"
+      :show-close="false"
+    >
+      <SettingsDialog @close="showSettings = false" />
+    </el-dialog>
+  </section>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { usePomodoroStore } from '@/stores/pomodoro'
+import { useUserStore } from '@/stores/user'
+import { createTask, getTasks } from '@/api/task'
+import { Refresh, Setting, ArrowDown } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import SettingsDialog from '@/components/SettingsDialog.vue'
+import { FastAverageColor } from 'fast-average-color'
+
+const pomodoroStore = usePomodoroStore()
+const userStore = useUserStore()
+const fac = new FastAverageColor()
+
+const isUIHidden = ref(false)
+let hideTimer = null
+const zenNote = ref('')
+const showSettings = ref(false)
+const tasks = ref([])
+const analyzedTheme = ref('light') // 'light' means light text (dark bg), 'dark' means dark text (light bg)
+
+const bgStyle = computed(() => {
+  if (pomodoroStore.backgroundImage) {
+    return {
+      backgroundImage: `url(/backgrounds/${pomodoroStore.backgroundImage})`,
+      opacity: 1
+    }
+  }
+  // Minimal Black Default
+  return { 
+    backgroundColor: '#1a1a1a',
+    opacity: 1 
+  }
+})
+
+const currentHeroTheme = computed(() => {
+  if (pomodoroStore.backgroundImage) {
+    if (pomodoroStore.heroTheme === 'auto') {
+      return analyzedTheme.value
+    }
+    return pomodoroStore.heroTheme
+  }
+  // Default Minimal Black always uses Light Text
+  return 'light'
+})
+
+// Provide CSS variables for hero section
+const heroThemeStyles = computed(() => {
+  const isLightText = currentHeroTheme.value === 'light'
+  return {
+    '--hero-text-color': isLightText ? '#ffffff' : '#303133',
+    '--hero-text-shadow': isLightText ? '0 2px 10px rgba(0,0,0,0.3)' : 'none',
+    '--hero-bg-blur': isLightText ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    '--hero-border-color': isLightText ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+    '--hero-control-bg': isLightText ? '#ffffff' : '#303133',
+    '--hero-control-text': isLightText ? '#303133' : '#ffffff',
+  }
+})
+
+// Analyze background image
+const analyzeBackground = () => {
+  if (!pomodoroStore.backgroundImage) {
+    // Default to system theme behavior (no special hero class)
+    // But here we need a concrete value. If no bg, we usually want system theme.
+    // However, our template logic relies on heroThemeStyles.
+    // Let's assume if no BG, we follow system.
+    // But wait, if no BG, `bgStyle` opacity is 0, so we see main-layout background.
+    // Main layout background changes with system theme.
+    // So if no BG, we should probably set 'auto' to match system?
+    // Actually, if no BG, we might want to just stick to default colors.
+    // For now let's default to 'dark' text (light theme assumption) or just let CSS handle it?
+    // The requirement is "If background image...".
+    // If no background image, we can just not apply special styles?
+    return
+  }
+
+  const img = new Image()
+  img.src = `/backgrounds/${pomodoroStore.backgroundImage}`
+  img.crossOrigin = "Anonymous"
+  img.onload = () => {
+    const color = fac.getColor(img)
+    // isDark -> background is dark -> we want light text
+    analyzedTheme.value = color.isDark ? 'light' : 'dark'
+  }
+}
+
+watch(() => pomodoroStore.backgroundImage, analyzeBackground, { immediate: true })
+
+const currentTaskTitle = computed(() => {
+  if (!pomodoroStore.selectedTaskId) return null
+  const task = tasks.value.find(t => t.id === pomodoroStore.selectedTaskId)
+  return task ? task.title : null
+})
+
+const pendingTasks = computed(() => {
+  return tasks.value.filter(t => t.status !== 'DONE')
+})
+
+const handleTaskSelect = (command) => {
+  if (command === 'clear') {
+    pomodoroStore.selectedTaskId = null
+  } else {
+    pomodoroStore.selectedTaskId = command
+  }
+}
+
+const handleMouseMove = () => {
+  isUIHidden.value = false
+  clearTimeout(hideTimer)
+  hideTimer = setTimeout(() => {
+    if (pomodoroStore.isRunning) {
+      isUIHidden.value = true
+    }
+  }, 3000)
+}
+
+const saveZenNote = async () => {
+  if (!zenNote.value.trim()) return
+  try {
+    await createTask({
+      userId: userStore.user.id,
+      title: '[Zen Note] ' + zenNote.value,
+      status: 'TODO',
+      priority: 'LOW'
+    })
+    ElMessage.success('Note captured')
+    zenNote.value = ''
+  } catch (e) {
+    ElMessage.error('Failed to save note')
+  }
+}
+
+const fetchTasks = async () => {
+  if (!userStore.user?.id) return
+  const data = await getTasks(userStore.user.id)
+  tasks.value = data || []
+}
+
+onMounted(() => {
+  window.addEventListener('mousemove', handleMouseMove)
+  fetchTasks()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('mousemove', handleMouseMove)
+  clearTimeout(hideTimer)
+})
+</script>
+
+<style scoped>
+.timer-section {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.5s ease;
+  overflow: hidden;
+  padding-top: 60px;
+  
+  /* Default variables (will be overridden by inline styles) */
+  --hero-text-color: var(--el-text-color-primary);
+  --hero-text-shadow: none;
+  --hero-bg-blur: rgba(255, 255, 255, 0.15);
+  --hero-border-color: rgba(255, 255, 255, 0.1);
+  --hero-control-bg: var(--el-bg-color);
+  --hero-control-text: var(--el-text-color-primary);
+}
+
+/* Dynamic Background */
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  transition: opacity 0.5s ease;
+}
+
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* background-color set via inline style */
+  transition: background-color 0.3s;
+}
+
+/* UI Hiding Logic */
+.ui-hidden .mode-toggles,
+.ui-hidden .timer-controls,
+.ui-hidden .zen-note,
+.ui-hidden .scroll-indicator,
+.ui-hidden .current-task {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.timer-content {
+  text-align: center;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* Mode Toggles */
+.mode-toggles {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 2rem;
+  background: var(--hero-bg-blur);
+  padding: 6px;
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--hero-border-color);
+  transition: all 0.5s ease;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--hero-text-color);
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--el-font-family);
+  font-size: 14px;
+  text-shadow: var(--hero-text-shadow);
+}
+
+.mode-btn:hover:not(:disabled) {
+  background: rgba(128, 128, 128, 0.2);
+}
+
+.mode-btn.active {
+  background: var(--el-color-primary);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-shadow: none;
+}
+
+.mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Timer Display */
+.timer-display {
+  margin: 1rem 0;
+}
+
+.timer-digits {
+  font-size: 12rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+  font-family: 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -5px;
+  color: var(--hero-text-color);
+  text-shadow: var(--hero-text-shadow);
+  transition: color 0.3s;
+}
+
+/* Current Task */
+.current-task {
+  margin-bottom: 3rem;
+  transition: opacity 0.5s ease;
+  height: 40px;
+}
+
+.task-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--hero-bg-blur);
+  border: 1px solid var(--hero-border-color);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  color: var(--hero-text-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: var(--hero-text-shadow);
+}
+
+.task-chip:hover:not(.disabled) {
+  background: rgba(128, 128, 128, 0.2);
+}
+
+.task-chip.disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.dropdown-icon {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+/* Controls */
+.timer-controls {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.control-btn {
+  background: var(--hero-bg-blur);
+  backdrop-filter: blur(5px);
+  border: 1px solid var(--hero-border-color);
+  color: var(--hero-text-color);
+  transition: all 0.2s;
+}
+
+.control-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: rgba(128, 128, 128, 0.2);
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-btn.main-action {
+  height: 64px;
+  padding: 0 40px;
+  border-radius: 32px;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: var(--hero-control-bg);
+  color: var(--hero-control-text);
+  border: none;
+}
+
+.control-btn.main-action.active {
+  background: var(--el-fill-color-darker);
+}
+
+.control-btn.icon-only {
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+}
+
+/* Zen Note */
+.zen-note {
+  margin-top: 4rem;
+  width: 360px;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.zen-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--hero-border-color);
+  padding: 12px;
+  text-align: center;
+  color: var(--hero-text-color);
+  outline: none;
+  font-size: 1.2rem;
+  transition: border-color 0.3s;
+  font-family: 'Inter', sans-serif;
+  text-shadow: var(--hero-text-shadow);
+}
+
+.zen-input:focus {
+  border-bottom-color: var(--el-color-primary);
+}
+
+.zen-input::placeholder {
+  color: var(--hero-text-color);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* Scroll Indicator */
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  animation: bounce 2s infinite;
+  font-size: 2rem;
+  color: var(--hero-text-color);
+  transition: opacity 0.5s ease;
+  opacity: 0.8;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
+  40% {transform: translateY(-10px) translateX(-50%);}
+  60% {transform: translateY(-5px) translateX(-50%);}
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .timer-digits {
+    font-size: 6rem;
+  }
+  .mode-toggles {
+    transform: scale(0.9);
+  }
+}
+</style>
