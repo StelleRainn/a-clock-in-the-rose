@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { savePomodoro, getTodayPomodoroCount } from '@/api/pomodoro'
 import { useUserStore } from '@/stores/user'
+import { imageDb } from '@/utils/imageDb'
 import { ElMessage } from 'element-plus'
 
 export const usePomodoroStore = defineStore('pomodoro', () => {
@@ -23,8 +24,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   
   // Background Settings (Global or Hero specific)
   const backgroundImage = ref(localStorage.getItem('pomodoro_backgroundImage') || '')
+  const customBgUrl = ref('')
   const heroTheme = ref(localStorage.getItem('pomodoro_heroTheme') || 'auto') // 'auto' | 'light' | 'dark'
   const bgOverlayOpacity = ref(parseFloat(localStorage.getItem('pomodoro_bgOverlayOpacity')) || 0.2)
+  const isImmersive = ref(false)
 
   // -- State --
   const isRunning = ref(false)
@@ -67,13 +70,37 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   watch(soundEnabled, (val) => localStorage.setItem('pomodoro_soundEnabled', val))
   watch(soundVolume, (val) => localStorage.setItem('pomodoro_soundVolume', val))
   watch(selectedSound, (val) => localStorage.setItem('pomodoro_selectedSound', val))
-  watch(backgroundImage, (val) => localStorage.setItem('pomodoro_backgroundImage', val))
+  watch(backgroundImage, (val) => {
+    localStorage.setItem('pomodoro_backgroundImage', val)
+    if (val === 'custom') {
+      loadCustomBackground()
+    }
+  })
   watch(heroTheme, (val) => localStorage.setItem('pomodoro_heroTheme', val))
   watch(bgOverlayOpacity, (val) => localStorage.setItem('pomodoro_bgOverlayOpacity', val))
   watch(currentMode, (val) => localStorage.setItem('pomodoro_currentMode', val))
   watch(pomodorosSinceLongBreak, (val) => localStorage.setItem('pomodoro_pomodorosSinceLongBreak', val))
 
+  async function loadCustomBackground() {
+    try {
+      const blob = await imageDb.getImage('custom')
+      if (blob) {
+        if (customBgUrl.value) URL.revokeObjectURL(customBgUrl.value)
+        customBgUrl.value = URL.createObjectURL(blob)
+      } else if (backgroundImage.value === 'custom') {
+        // Fallback if db is empty but setting says custom
+        backgroundImage.value = ''
+      }
+    } catch (e) {
+      console.error('Failed to load custom bg', e)
+    }
+  }
+
   // Restore logic
+  if (backgroundImage.value === 'custom') {
+    loadCustomBackground()
+  }
+
   if (endTime.value && endTime.value > Date.now()) {
     isRunning.value = true
     startTimer(true)
@@ -217,7 +244,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
           completedPomodoros.value = res.count || 0
           todayFocusSeconds.value = res.totalSeconds || 0
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Failed to fetch today count', e)
+      }
     }
   }
 
@@ -241,8 +270,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     soundVolume,
     selectedSound,
     backgroundImage,
+    customBgUrl,
     heroTheme,
     bgOverlayOpacity,
+    isImmersive,
     
     // State
     isRunning,
@@ -261,6 +292,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     resetTimer,
     setMode,
     updateSettings,
-    fetchTodayCount
+    fetchTodayCount,
+    loadCustomBackground
   }
 })

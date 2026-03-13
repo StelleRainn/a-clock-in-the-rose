@@ -28,6 +28,13 @@
       <!-- General: Background Image -->
       <div v-if="activeTab === 'general'" class="tab-pane">
         <h3>Background</h3>
+        <input 
+          type="file" 
+          ref="fileInput" 
+          accept="image/*" 
+          style="display: none" 
+          @change="handleFileUpload"
+        >
         <div class="bg-grid">
           <div 
             class="bg-item" 
@@ -38,6 +45,28 @@
             <span>Default</span>
           </div>
           
+          <div 
+            class="bg-item" 
+            :class="{ active: tempBg === 'custom' }"
+            @click="triggerUpload"
+          >
+            <div 
+              class="bg-preview custom-bg" 
+              :style="localCustomUrl ? { backgroundImage: `url(${localCustomUrl})` } : {}"
+            >
+              <el-icon v-if="!localCustomUrl" class="upload-icon"><Plus /></el-icon>
+              
+              <div 
+                v-if="localCustomUrl" 
+                class="delete-btn"
+                @click="removeCustomImage"
+              >
+                <el-icon><Delete /></el-icon>
+              </div>
+            </div>
+            <span>Custom</span>
+          </div>
+
           <div 
             v-for="bg in backgrounds" 
             :key="bg" 
@@ -147,13 +176,66 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { usePomodoroStore } from '@/stores/pomodoro'
-import { Monitor, Timer, Headset } from '@element-plus/icons-vue'
+import { Monitor, Timer, Headset, Plus, Delete } from '@element-plus/icons-vue'
+import { imageDb } from '@/utils/imageDb'
+import { ElMessage } from 'element-plus'
 
 const emit = defineEmits(['close'])
 const pomodoroStore = usePomodoroStore()
 const activeTab = ref('general')
+const fileInput = ref(null)
+const pendingFile = ref(null)
+const localCustomUrl = ref(pomodoroStore.customBgUrl)
+const isCustomDeleted = ref(false)
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.error('Image size should be less than 10MB')
+    return
+  }
+
+  if (pendingFile.value && localCustomUrl.value) {
+    URL.revokeObjectURL(localCustomUrl.value)
+  }
+
+  pendingFile.value = file
+  localCustomUrl.value = URL.createObjectURL(file)
+  tempBg.value = 'custom'
+  isCustomDeleted.value = false
+}
+
+const triggerUpload = () => {
+  if (!localCustomUrl.value) {
+    fileInput.value.click()
+  } else {
+    // If image exists, clicking just selects it
+    tempBg.value = 'custom'
+  }
+}
+
+const removeCustomImage = (e) => {
+  e.stopPropagation()
+  if (localCustomUrl.value && pendingFile.value) {
+    URL.revokeObjectURL(localCustomUrl.value)
+  }
+  localCustomUrl.value = null
+  pendingFile.value = null
+  isCustomDeleted.value = true
+  if (tempBg.value === 'custom') {
+    tempBg.value = ''
+  }
+}
+
+onUnmounted(() => {
+  if (pendingFile.value && localCustomUrl.value) {
+    URL.revokeObjectURL(localCustomUrl.value)
+  }
+})
 
 // Local state for optimistic UI
 const workMins = ref(Math.floor(pomodoroStore.pomodoroDuration / 60))
@@ -178,8 +260,30 @@ const formatBgName = (name) => {
   return name.replace('.jpg', '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
 }
 
-const saveChanges = () => {
+const saveChanges = async () => {
   // Commit changes to store
+  
+  // Handle deletion
+  if (isCustomDeleted.value) {
+    try {
+      await imageDb.deleteImage('custom')
+      pomodoroStore.customBgUrl = '' // clear store URL
+      await pomodoroStore.loadCustomBackground() // Reload to ensure sync
+    } catch {
+      ElMessage.error('Failed to remove custom background')
+    }
+  }
+
+  // Handle new upload
+  if (tempBg.value === 'custom' && pendingFile.value) {
+    try {
+      await imageDb.saveImage('custom', pendingFile.value)
+      await pomodoroStore.loadCustomBackground()
+    } catch {
+      ElMessage.error('Failed to save custom background')
+    }
+  }
+
   pomodoroStore.pomodoroDuration = workMins.value * 60
   pomodoroStore.shortBreakDuration = shortBreakMins.value * 60
   pomodoroStore.longBreakDuration = longBreakMins.value * 60
@@ -288,6 +392,42 @@ const saveChanges = () => {
 .bg-preview.default-bg {
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bg-preview.custom-bg {
+  border: 1px dashed var(--el-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--el-fill-color-light);
+  position: relative;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.delete-btn:hover {
+  background: var(--el-color-danger);
+  transform: scale(1.1);
+}
+
+.upload-icon {
+  font-size: 24px;
+  color: var(--el-text-color-secondary);
 }
 
 .bg-item.active .bg-preview {

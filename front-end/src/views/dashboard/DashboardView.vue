@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-view" ref="dashboardRef">
     <TimerSection @scroll-down="scrollToWidgets" />
-    <DashboardWidgets ref="widgetsRef" />
+    <DashboardWidgets v-if="!pomodoroStore.isImmersive" ref="widgetsRef" />
   </div>
 </template>
 
@@ -9,7 +9,9 @@
 import { ref } from 'vue'
 import TimerSection from './TimerSection.vue'
 import DashboardWidgets from './DashboardWidgets.vue'
+import { usePomodoroStore } from '@/stores/pomodoro'
 
+const pomodoroStore = usePomodoroStore()
 const dashboardRef = ref(null)
 const widgetsRef = ref(null)
 

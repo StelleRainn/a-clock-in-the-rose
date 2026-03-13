@@ -1,309 +1,325 @@
 <template>
   <div class="dashboard-widgets">
-    <el-row :gutter="24">
-      <!-- Calendar / Heatmap Widget -->
-      <el-col :span="14" :xs="24">
-        <el-card class="widget-card glass-card">
-          <template #header>
-            <div class="card-header">
-              <span>Activity Heatmap</span>
-              <span class="streak-badge" v-if="streakDays > 0">
-                <el-icon color="#f56c6c"><Opportunity /></el-icon> {{ streakDays }} Day Streak
-              </span>
-            </div>
-          </template>
-          <el-calendar v-model="calendarDate">
-            <template #date-cell="{ data }">
-              <div class="calendar-cell" :class="{ 'has-focus': getFocusTimeForDate(data.day) > 0 }">
-                <span class="day-num">{{ data.day.split('-').slice(2).join('') }}</span>
-                <div class="indicators">
-                  <span v-if="getTasksForDate(data.day).length > 0" class="dot task-dot"></span>
-                  <span v-if="getFocusTimeForDate(data.day) > 0" class="dot focus-dot"></span>
-                </div>
-              </div>
-            </template>
-          </el-calendar>
-        </el-card>
-      </el-col>
+    <!-- Header with Edit Mode Toggle -->
+    <div class="widgets-header">
+      <div class="left">
+        <h2>My Space</h2>
+      </div>
+      <div class="right">
+        <el-button 
+          v-if="!isEditMode" 
+          type="primary" 
+          link 
+          @click="isEditMode = true"
+        >
+          Customize
+        </el-button>
+        <div v-else class="edit-controls">
+          <el-button type="success" size="small" @click="showAddWidget = true">
+            <el-icon><Plus /></el-icon> Add Widget
+          </el-button>
+          <el-button type="info" size="small" @click="isEditMode = false">
+            Done
+          </el-button>
+        </div>
+      </div>
+    </div>
 
-      <!-- Right Column -->
-      <el-col :span="10" :xs="24">
-        <!-- Daily Focus Stats -->
-        <el-card class="widget-card glass-card mb-4">
-          <div class="focus-stat-container">
-            <div class="ring-chart">
-              <el-progress type="dashboard" :percentage="dailyGoalPercentage" :color="colors">
-                <template #default="{ percentage }">
-                  <span class="percentage-value">{{ Math.round(pomodoroStore.todayFocusSeconds / 60) }}m</span>
-                  <span class="percentage-label">Focused</span>
-                </template>
-              </el-progress>
-            </div>
-            <div class="stat-details">
-              <h3>Today's Focus</h3>
-              <p>{{ pomodoroStore.completedPomodoros }} Pomodoros completed</p>
-            </div>
-          </div>
-        </el-card>
+    <!-- Empty State -->
+    <div v-if="activeWidgets.length === 0" class="empty-state">
+      <h3>Customize your space</h3>
+      <div class="add-widget-card" @click="showAddWidget = true">
+        <el-icon :size="24"><Plus /></el-icon>
+        <span>Add Widget</span>
+      </div>
+    </div>
 
-        <!-- Recent Tasks -->
-        <el-card class="widget-card glass-card">
-          <template #header>
-            <div class="card-header">
-              <span>Upcoming Tasks</span>
-              <el-button link @click="$router.push('/tasks')">View All</el-button>
-            </div>
-          </template>
-          <div class="task-list">
-            <div v-for="task in recentTasks" :key="task.id" class="task-item">
-              <el-checkbox v-model="task.done" @change="toggleTask(task)" />
-              <span class="task-title" :class="{ done: task.status === 'DONE' }">{{ task.title }}</span>
-              <el-tag size="small" :type="getPriorityType(task.priority)">{{ task.priority }}</el-tag>
-            </div>
-            <div v-if="recentTasks.length === 0" class="empty-state">
-              No pending tasks. <el-button link type="primary" @click="$emit('add-task')">Add one?</el-button>
-            </div>
+    <!-- Grid Layout -->
+    <div v-else class="widgets-grid">
+      <div 
+        v-for="widget in activeWidgets" 
+        :key="widget.id"
+        class="widget-wrapper"
+        :class="[`col-${widget.cols || 1}`, { 'is-editing': isEditMode }]"
+      >
+        <!-- Remove Button (Edit Mode) -->
+        <div v-if="isEditMode" class="remove-btn" @click="removeWidget(widget.id)">
+          <el-icon><Close /></el-icon>
+        </div>
+
+        <!-- Dynamic Component -->
+        <component :is="getComponent(widget.type)" />
+      </div>
+    </div>
+
+    <!-- Widget Store Drawer -->
+    <el-drawer v-model="showAddWidget" title="Widget Store" direction="rtl" size="300px">
+      <div class="widget-store">
+        <div 
+          v-for="item in availableWidgets" 
+          :key="item.type"
+          class="store-item"
+          @click="addWidget(item)"
+        >
+          <div class="item-preview">
+            <el-icon :size="32"><component :is="item.icon" /></el-icon>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          <div class="item-info">
+            <h4>{{ item.name }}</h4>
+            <p>{{ item.desc }}</p>
+          </div>
+          <el-button size="small" icon="Plus" circle />
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { usePomodoroStore } from '@/stores/pomodoro'
-import { getTasks, updateTask } from '@/api/task'
-import { getDailyFocusStats } from '@/api/stats'
-import { getUserStats } from '@/api/gamification'
-import { Opportunity } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, watch } from 'vue'
+import { Plus, Close, Calendar, PieChart, List, ChatDotSquare } from '@element-plus/icons-vue'
+import WidgetHeatmap from '@/components/widgets/WidgetHeatmap.vue'
+import WidgetFocusRing from '@/components/widgets/WidgetFocusRing.vue'
+import WidgetTodoList from '@/components/widgets/WidgetTodoList.vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-const pomodoroStore = usePomodoroStore()
+const isEditMode = ref(false)
+const showAddWidget = ref(false)
 
-const calendarDate = ref(new Date())
-const tasks = ref([])
-const dailyFocusData = ref([])
-const streakDays = ref(0)
-const dailyGoalMinutes = 120 // Example goal
-
-const colors = [
-  { color: '#f56c6c', percentage: 20 },
-  { color: '#e6a23c', percentage: 40 },
-  { color: '#5cb87a', percentage: 60 },
-  { color: '#1989fa', percentage: 80 },
-  { color: '#6f7ad3', percentage: 100 },
+// Default widgets for first-time users
+const defaultWidgets = [
+  { id: 'w1', type: 'focus-ring', cols: 1 },
+  { id: 'w2', type: 'todo-list', cols: 1 },
+  { id: 'w3', type: 'heatmap', cols: 2 }
 ]
 
-const dailyGoalPercentage = computed(() => {
-  const minutes = pomodoroStore.todayFocusSeconds / 60
-  return Math.min((minutes / dailyGoalMinutes) * 100, 100)
-})
+const activeWidgets = ref([])
 
-const recentTasks = computed(() => {
-  return tasks.value
-    .filter(t => t.status !== 'DONE')
-    .slice(0, 5)
-})
-
-const fetchData = async () => {
-  if (!userStore.user?.id) return
-  try {
-    const [tasksRes, focusRes, statsRes] = await Promise.all([
-      getTasks(userStore.user.id),
-      getDailyFocusStats(userStore.user.id),
-      getUserStats(userStore.user.id)
-    ])
-    tasks.value = tasksRes || []
-    dailyFocusData.value = focusRes || []
-    streakDays.value = statsRes?.streakDays || 0
-  } catch (e) {
-    console.error('Failed to fetch dashboard data', e)
-  }
-}
-
-const getFocusTimeForDate = (dateStr) => {
-  const stat = dailyFocusData.value.find(d => d.date === dateStr)
-  return stat ? stat.totalSeconds : 0
-}
-
-const getTasksForDate = (dateStr) => {
-  return tasks.value.filter(task => {
-    if (!task.dueDate) return false
-    const taskDate = new Date(task.dueDate).toISOString().split('T')[0]
-    return taskDate === dateStr
-  })
-}
-
-const toggleTask = async (task) => {
-  // task.done is v-model, but we need to update status
-  const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE'
-  // Optimistic update
-  task.status = newStatus
-  
-  try {
-    await updateTask(task.id, { ...task, status: newStatus, userId: userStore.user.id })
-    ElMessage.success('Task updated')
-  } catch (e) {
-    // Revert
-    task.status = newStatus === 'DONE' ? 'TODO' : 'DONE'
-    ElMessage.error('Failed to update task')
-  }
-}
-
-const getPriorityType = (p) => {
-  const map = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'info' }
-  return map[p] || ''
-}
-
+// Load from local storage
 onMounted(() => {
-  fetchData()
-  pomodoroStore.fetchTodayCount()
+  const saved = localStorage.getItem('dashboard_widgets')
+  if (saved) {
+    activeWidgets.value = JSON.parse(saved)
+  } else {
+    activeWidgets.value = defaultWidgets
+  }
 })
+
+// Save on change
+watch(activeWidgets, (val) => {
+  localStorage.setItem('dashboard_widgets', JSON.stringify(val))
+}, { deep: true })
+
+const availableWidgets = [
+  { 
+    type: 'heatmap', 
+    name: 'Calendar Heatmap', 
+    desc: 'Visualize your consistency', 
+    icon: Calendar,
+    defaultCols: 2 
+  },
+  { 
+    type: 'focus-ring', 
+    name: 'Today\'s Focus', 
+    desc: 'Daily progress ring', 
+    icon: PieChart,
+    defaultCols: 1
+  },
+  { 
+    type: 'todo-list', 
+    name: 'Todo List', 
+    desc: 'Quick task access', 
+    icon: List,
+    defaultCols: 1
+  },
+  // Placeholder for Quote
+  // { type: 'quote', name: 'Quote', desc: 'Daily inspiration', icon: ChatDotSquare, defaultCols: 2 }
+]
+
+const getComponent = (type) => {
+  const map = {
+    'heatmap': WidgetHeatmap,
+    'focus-ring': WidgetFocusRing,
+    'todo-list': WidgetTodoList
+  }
+  return map[type]
+}
+
+const addWidget = (item) => {
+  activeWidgets.value.push({
+    id: Date.now().toString(),
+    type: item.type,
+    cols: item.defaultCols
+  })
+  showAddWidget.value = false
+}
+
+const removeWidget = (id) => {
+  activeWidgets.value = activeWidgets.value.filter(w => w.id !== id)
+}
 </script>
 
 <style scoped>
 .dashboard-widgets {
   padding: 40px 20px;
-  min-height: 100vh;
-  background: rgba(255, 255, 255, 0.5); /* Slight tint for contrast below fold */
-  backdrop-filter: blur(20px);
+  min-height: 50vh;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.dark .dashboard-widgets {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.widget-card {
-  border: none;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.dark .widget-card {
-  background: rgba(30, 30, 30, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.widget-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
-}
-
-.mb-4 {
-  margin-bottom: 24px;
-}
-
-.card-header {
+.widgets-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 24px;
+}
+
+.widgets-header h2 {
+  font-size: 1.5rem;
   font-weight: 600;
-  font-size: 1.1rem;
+  margin: 0;
+  color: var(--el-text-color-primary);
 }
 
-/* Calendar Tweaks */
-.calendar-cell {
-  height: 100%;
+.edit-controls {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  gap: 12px;
 }
 
-.has-focus {
-  background-color: rgba(var(--el-color-primary-rgb), 0.1);
-  border-radius: 4px;
-}
-
-.indicators {
-  display: flex;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-}
-
-.task-dot { background-color: var(--el-color-warning); }
-.focus-dot { background-color: var(--el-color-success); }
-
-/* Stats Widget */
-.focus-stat-container {
-  display: flex;
-  align-items: center;
+/* Grid Layout */
+.widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 Column layout for desktop */
   gap: 24px;
 }
 
-.percentage-value {
-  display: block;
-  font-size: 24px;
-  font-weight: bold;
+.widget-wrapper {
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-.percentage-label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+.widget-wrapper.col-2 {
+  grid-column: span 2;
 }
 
-.stat-details h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.2rem;
+.widget-wrapper.col-1 {
+  grid-column: span 1;
 }
 
-.stat-details p {
-  margin: 0;
-  color: var(--el-text-color-secondary);
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .widgets-grid {
+    grid-template-columns: 1fr;
+  }
+  .widget-wrapper.col-2 {
+    grid-column: span 1;
+  }
 }
 
-/* Task List */
-.task-list {
+/* Edit Mode Styles */
+.widget-wrapper.is-editing {
+  transform: scale(0.98);
+  opacity: 0.9;
+  cursor: grab;
+}
+
+.widget-wrapper.is-editing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px dashed var(--el-color-primary);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.remove-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  background: var(--el-color-danger);
+  color: white;
+  border-radius: 50%;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.task-item {
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--el-text-color-secondary);
+}
+
+.add-widget-card {
+  margin-top: 24px;
+  width: 200px;
+  height: 120px;
+  border: 2px dashed var(--el-border-color);
+  border-radius: 16px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-widget-card:hover {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: rgba(var(--el-color-primary-rgb), 0.05);
+}
+
+/* Widget Store */
+.store-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px;
+  padding: 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
   transition: background 0.2s;
+  border: 1px solid var(--el-border-color-lighter);
+  margin-bottom: 12px;
 }
 
-.dark .task-item {
-  background: rgba(255, 255, 255, 0.05);
+.store-item:hover {
+  background: var(--el-fill-color-light);
+  border-color: var(--el-color-primary-light-5);
 }
 
-.task-item:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.task-title {
-  flex: 1;
-  font-weight: 500;
-}
-
-.task-title.done {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.empty-state {
-  text-align: center;
+.item-preview {
+  width: 48px;
+  height: 48px;
+  background: var(--el-fill-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--el-text-color-secondary);
-  padding: 20px;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+}
+
+.item-info p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

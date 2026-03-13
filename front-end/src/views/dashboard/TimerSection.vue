@@ -98,6 +98,14 @@
         <el-button 
           class="control-btn icon-only"
           circle
+          @click="toggleFullscreen"
+        >
+          <el-icon :size="20"><FullScreen /></el-icon>
+        </el-button>
+
+        <el-button 
+          class="control-btn icon-only"
+          circle
           @click="showSettings = true"
         >
           <el-icon :size="20"><Setting /></el-icon>
@@ -115,7 +123,7 @@
       </div>
 
       <!-- Scroll Indicator -->
-      <div class="scroll-indicator" @click="$emit('scroll-down')">
+      <div v-if="!pomodoroStore.isImmersive" class="scroll-indicator" @click="$emit('scroll-down')">
         <el-icon><ArrowDown /></el-icon>
       </div>
     </div>
@@ -139,7 +147,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { usePomodoroStore } from '@/stores/pomodoro'
 import { useUserStore } from '@/stores/user'
 import { createTask, getTasks } from '@/api/task'
-import { Refresh, Setting, ArrowDown } from '@element-plus/icons-vue'
+import { Refresh, Setting, ArrowDown, FullScreen } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { FastAverageColor } from 'fast-average-color'
@@ -157,8 +165,12 @@ const analyzedTheme = ref('light') // 'light' means light text (dark bg), 'dark'
 
 const bgStyle = computed(() => {
   if (pomodoroStore.backgroundImage) {
+    const url = pomodoroStore.backgroundImage === 'custom' 
+      ? pomodoroStore.customBgUrl 
+      : `/backgrounds/${pomodoroStore.backgroundImage}`
+      
     return {
-      backgroundImage: `url(/backgrounds/${pomodoroStore.backgroundImage})`,
+      backgroundImage: `url(${url})`,
       opacity: 1
     }
   }
@@ -211,7 +223,11 @@ const analyzeBackground = () => {
   }
 
   const img = new Image()
-  img.src = `/backgrounds/${pomodoroStore.backgroundImage}`
+  if (pomodoroStore.backgroundImage === 'custom') {
+    img.src = pomodoroStore.customBgUrl
+  } else {
+    img.src = `/backgrounds/${pomodoroStore.backgroundImage}`
+  }
   img.crossOrigin = "Anonymous"
   img.onload = () => {
     const color = fac.getColor(img)
@@ -261,7 +277,7 @@ const saveZenNote = async () => {
     })
     ElMessage.success('Note captured')
     zenNote.value = ''
-  } catch (e) {
+  } catch {
     ElMessage.error('Failed to save note')
   }
 }
@@ -272,13 +288,35 @@ const fetchTasks = async () => {
   tasks.value = data || []
 }
 
+const toggleFullscreen = async () => {
+  if (!document.fullscreenElement) {
+    try {
+      await document.documentElement.requestFullscreen()
+      pomodoroStore.isImmersive = true
+    } catch (e) {
+      console.error(e)
+    }
+  } else {
+    if (document.exitFullscreen) {
+      await document.exitFullscreen()
+      pomodoroStore.isImmersive = false
+    }
+  }
+}
+
+const handleFullscreenChange = () => {
+  pomodoroStore.isImmersive = !!document.fullscreenElement
+}
+
 onMounted(() => {
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('fullscreenchange', handleFullscreenChange)
   fetchTasks()
 })
 
 onUnmounted(() => {
   window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('fullscreenchange', handleFullscreenChange)
   clearTimeout(hideTimer)
 })
 </script>

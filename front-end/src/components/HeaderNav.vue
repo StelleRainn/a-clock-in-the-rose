@@ -2,7 +2,7 @@
   <div class="header-nav-container">
     <!-- Hero Header: Absolute, Transparent, Hero Theme -->
     <header 
-      v-if="transparent"
+      v-if="transparent && !pomodoroStore.isImmersive"
       class="header-nav hero-header" 
       :class="{ 'hero-light': isHeroLight }"
     >
@@ -17,6 +17,9 @@
         <nav class="main-menu">
           <router-link to="/dashboard" class="nav-item" active-class="active">
             <el-icon><Odometer /></el-icon> Focus Station
+          </router-link>
+          <router-link to="/calendar" class="nav-item" active-class="active">
+            <el-icon><Calendar /></el-icon> Calendar
           </router-link>
           <router-link to="/tasks" class="nav-item" active-class="active">
             <el-icon><List /></el-icon> Tasks
@@ -57,7 +60,7 @@
     <!-- Fixed Header: Fixed, Glass, System Theme -->
     <header 
       class="header-nav fixed-header" 
-      :class="{ 'visible': showFixedHeader }"
+      :class="{ 'visible': showFixedHeader && !pomodoroStore.isImmersive }"
     >
       <div class="nav-left">
         <div class="logo">
@@ -70,6 +73,9 @@
         <nav class="main-menu">
           <router-link to="/dashboard" class="nav-item" active-class="active">
             <el-icon><Odometer /></el-icon> Focus Station
+          </router-link>
+          <router-link to="/calendar" class="nav-item" active-class="active">
+            <el-icon><Calendar /></el-icon> Calendar
           </router-link>
           <router-link to="/tasks" class="nav-item" active-class="active">
             <el-icon><List /></el-icon> Tasks
@@ -115,7 +121,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { usePomodoroStore } from '@/stores/pomodoro'
-import { Moon, Sunny, Timer, Odometer, List, TrendCharts, Plus } from '@element-plus/icons-vue'
+import { Moon, Sunny, Timer, Odometer, List, TrendCharts, Plus, Calendar } from '@element-plus/icons-vue'
 import { getUserProfile } from '@/api/user'
 import { FastAverageColor } from 'fast-average-color'
 
@@ -168,7 +174,11 @@ const analyzeBackground = () => {
     return
   }
   const img = new Image()
-  img.src = `/backgrounds/${pomodoroStore.backgroundImage}`
+  if (pomodoroStore.backgroundImage === 'custom') {
+    img.src = pomodoroStore.customBgUrl
+  } else {
+    img.src = `/backgrounds/${pomodoroStore.backgroundImage}`
+  }
   img.crossOrigin = "Anonymous"
   img.onload = () => {
     const color = fac.getColor(img)

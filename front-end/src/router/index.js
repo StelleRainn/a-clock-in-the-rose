@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layout/MainLayout.vue'
 import LoginView from '../views/auth/LoginView.vue'
 import DashboardView from '../views/dashboard/DashboardView.vue'
+import CalendarView from '../views/calendar/CalendarView.vue'
 import TaskListView from '../views/tasks/TaskListView.vue'
 import PomodoroTimer from '../views/pomodoro/PomodoroTimer.vue'
 import StatsOverview from '../views/stats/StatsOverview.vue'
@@ -24,6 +25,11 @@ const router = createRouter({
           path: 'dashboard',
           name: 'dashboard',
           component: DashboardView
+        },
+        {
+          path: 'calendar',
+          name: 'calendar',
+          component: CalendarView
         },
         {
           path: 'tasks',

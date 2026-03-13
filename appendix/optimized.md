@@ -1,17 +1,45 @@
-# 待改进 & 灵感
-> Optimization & Ideas
+# 待改进 & 灵感 (Optimization Log)
+> Tracking improvements, ideas, and technical debt.
 
-这里记录一些 【已经实现但可以优化】 / 【迸发灵感】/ 【存在部分异常】 的项目。
-已完成的，请标记完成。
+## Phase 4 成果归档 (Completed in Aesthetic Update)
 
-## 移动端适配
-> 计划于 Phase 4 阶段实现
+### 视觉与交互 (Visual & Interaction)
+- [x] **UI 重塑**: 全面转向 Glassmorphism 风格，移除侧边栏，采用双 Header 布局。
+- [x] **沉浸模式**: 实现 Hero Timer，支持 3s 自动隐藏 UI，支持浏览器全屏模式。
+- [x] **智能主题**: 集成 `fast-average-color`，实现背景图智能分析，自动调整文字颜色 (Light/Dark) 以保证可读性。
+- [x] **动态背景**: 支持自定义上传背景，支持遮罩浓度调节。
+- [x] **Bento Grid**: 首页次级板块采用可定制的网格布局，支持 Widget 增删。
 
-## CSS样式优化（UI 设计）
-> 计划于 Phase 4 阶段实现
+### 功能组件 (Functional Components)
+- [x] **Zen Note**: 专注时的临时想法捕捉。
+- [x] **Quick Toggles**: 番茄钟上方的快捷模式切换 (Pomodoro/Short/Long)。
+- [x] **Task Selector**: 首页集成的任务选择下拉菜单。
+- [x] **Calendar View**: 独立的数据回顾页面。
 
-## AI 助手与分析
-> 计划于 Phase 4 阶段实现
+---
+
+## 待办与灵感 (Backlog for Phase 5+)
+
+### 移动端适配 (Mobile Adaptation)
+> 计划于 Phase 5 重点攻克
+- [ ] **Bottom Navigation**: 移动端采用底部导航栏代替顶部 Header。
+- [ ] **Touch Optimization**: 优化 Widget 的拖拽和点击体验。
+- [ ] **Layout**: 强制单列布局，避免挤压。
+
+### 细节体验优化 (UX Polish)
+- [ ] **Transition**: 路由切换动画。
+- [ ] **Micro-interactions**: 按钮反馈、计时结束特效。
+- [ ] **Sound**: 更多白噪音选择，音量渐入渐出。
+
+### 代码与性能 (Code & Performance)
+- [ ] **Refactor**: `TimerSection` 和 `HeaderNav` 存在重复的背景色分析代码，应提取到 Store 或 Composable 中。
+- [ ] **Assets**: 图片资源压缩与懒加载。
+- [ ] **I18n**: 国际化支持 (准备多语言架构)。
+
+### AI 助手与分析 (AI & Analytics)
+> 长期规划
+- [ ] **智能建议**: 根据专注历史建议最佳专注时长。
+- [ ] **周报生成**: AI 生成专注周报摘要。
 
 ## 历史优化归档 (Milestone 3.0 已完成)
 
