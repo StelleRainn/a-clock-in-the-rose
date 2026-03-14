@@ -10,13 +10,55 @@
     </template>
     <el-calendar v-model="calendarDate">
       <template #date-cell="{ data }">
-        <div class="calendar-cell" :class="{ 'has-focus': getFocusTimeForDate(data.day) > 0 }">
-          <span class="day-num">{{ data.day.split('-').slice(2).join('') }}</span>
-          <div class="indicators">
-            <span v-if="getTasksForDate(data.day).length > 0" class="dot task-dot"></span>
-            <span v-if="getFocusTimeForDate(data.day) > 0" class="dot focus-dot"></span>
+        <el-popover
+          placement="top"
+          :width="240"
+          trigger="hover"
+          popper-class="heatmap-popover"
+        >
+          <template #reference>
+            <div class="calendar-cell" :class="{ 'has-focus': getFocusTimeForDate(data.day) > 0 }">
+              <span class="day-num">{{ data.day.split('-').slice(2).join('') }}</span>
+              <div class="indicators">
+                <span v-if="getTasksForDate(data.day).length > 0" class="dot task-dot"></span>
+                <span v-if="getFocusTimeForDate(data.day) > 0" class="dot focus-dot"></span>
+              </div>
+            </div>
+          </template>
+          
+          <!-- Popover Content -->
+          <div class="popover-content">
+            <h4 class="popover-date">{{ formatDate(data.day) }}</h4>
+            
+            <div v-if="getFocusTimeForDate(data.day) > 0" class="popover-section">
+              <div class="section-title">
+                <el-icon><Timer /></el-icon> Focus Time
+              </div>
+              <div class="focus-time">
+                {{ formatDuration(getFocusTimeForDate(data.day)) }}
+              </div>
+            </div>
+
+            <div v-if="getTasksForDate(data.day).length > 0" class="popover-section">
+              <div class="section-title">
+                <el-icon><List /></el-icon> Tasks
+              </div>
+              <ul class="popover-task-list">
+                <li v-for="task in getTasksForDate(data.day).slice(0, 3)" :key="task.id" class="popover-task-item">
+                  <span class="task-status-dot" :class="{ done: task.status === 'DONE' }"></span>
+                  <span class="task-text">{{ task.title }}</span>
+                </li>
+                <li v-if="getTasksForDate(data.day).length > 3" class="more-tasks">
+                  +{{ getTasksForDate(data.day).length - 3 }} more
+                </li>
+              </ul>
+            </div>
+
+            <div v-if="getFocusTimeForDate(data.day) === 0 && getTasksForDate(data.day).length === 0" class="empty-state">
+              <span class="empty-text">No focus records yet</span>
+            </div>
           </div>
-        </div>
+        </el-popover>
       </template>
     </el-calendar>
   </el-card>
@@ -28,13 +70,29 @@ import { useUserStore } from '@/stores/user'
 import { getTasks } from '@/api/task'
 import { getDailyFocusStats } from '@/api/stats'
 import { getUserStats } from '@/api/gamification'
-import { Opportunity } from '@element-plus/icons-vue'
+import { Opportunity, Timer, List } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const calendarDate = ref(new Date())
 const tasks = ref([])
 const dailyFocusData = ref([])
 const streakDays = ref(0)
+
+const formatDate = (dateStr) => {
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+const formatDuration = (seconds) => {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
 
 const fetchData = async () => {
   if (!userStore.user?.id) return
@@ -120,4 +178,103 @@ onMounted(() => {
 
 .task-dot { background-color: var(--el-color-warning); }
 .focus-dot { background-color: var(--el-color-success); }
+</style>
+
+<style>
+.heatmap-popover {
+  padding: 16px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--el-border-color-light) !important;
+  background: var(--el-bg-color-overlay) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popover-date {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding-bottom: 8px;
+}
+
+.popover-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+}
+
+.focus-time {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--el-color-primary);
+  padding-left: 0;
+  line-height: 1.2;
+}
+
+.popover-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popover-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+}
+
+.task-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--el-color-warning);
+  flex-shrink: 0;
+}
+
+.task-status-dot.done {
+  background-color: var(--el-color-success);
+}
+
+.task-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.more-tasks {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  padding-left: 14px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 8px 0;
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
+  font-size: 13px;
+}
 </style>
