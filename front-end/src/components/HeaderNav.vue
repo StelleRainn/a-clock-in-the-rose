@@ -27,6 +27,9 @@
           <router-link to="/stats" class="nav-item" active-class="active">
             <el-icon><TrendCharts /></el-icon> Stats
           </router-link>
+          <router-link to="/intelligent" class="nav-item" active-class="active">
+            <el-icon><Cpu /></el-icon> Intelligent
+          </router-link>
         </nav>
       </div>
 
@@ -83,6 +86,9 @@
           <router-link to="/stats" class="nav-item" active-class="active">
             <el-icon><TrendCharts /></el-icon> Stats
           </router-link>
+          <router-link to="/intelligent" class="nav-item" active-class="active">
+            <el-icon><Cpu /></el-icon> Intelligent
+          </router-link>
         </nav>
       </div>
 
@@ -121,7 +127,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { usePomodoroStore } from '@/stores/pomodoro'
-import { Moon, Sunny, Timer, Odometer, List, TrendCharts, Plus, Calendar } from '@element-plus/icons-vue'
+import { Moon, Sunny, Timer, Odometer, List, TrendCharts, Plus, Calendar, Cpu } from '@element-plus/icons-vue'
 import { getUserProfile } from '@/api/user'
 import { FastAverageColor } from 'fast-average-color'
 

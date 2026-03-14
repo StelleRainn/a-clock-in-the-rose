@@ -14,11 +14,13 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@google/genai": "^1.45.0",
     "axios": "^1.13.6",
     "echarts": "^6.0.0",
     "element-plus": "^2.13.3",
     "fast-average-color": "^9.5.0",
     "html2canvas": "^1.4.1",
+    "markdown-it": "^14.1.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "sass": "^1.97.3",

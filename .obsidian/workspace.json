@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "plans.md",
+                "file": "appendix/ACIRIntelligent.md",
                 "mode": "preview",
-                "source": false
+                "source": true
               },
               "icon": "lucide-file",
-              "title": "plans"
+              "title": "ACIRIntelligent"
             }
           }
         ]
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "plans.md",
+                "file": "appendix/ACIRIntelligent.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of plans"
+              "title": "Outline of ACIRIntelligent"
             }
           }
         ],
@@ -185,6 +185,16 @@
   },
   "active": "2b3bdc3431a7c044",
   "lastOpenFiles": [
+    "front-end/src/views/ai/AiAssistantView.vue",
+    "front-end/src/stores/ai.js",
+    "appendix/plans.md",
+    "front-end/node_modules/@google",
+    "front-end/src/views/ai",
+    "appendix/ACIRIntelligent.md",
+    "appendix/optimized.md",
+    "appendix/milestone.md",
+    "appendix/proposal.md",
+    "appendix/Design.md",
     "optimized.md",
     "milestone.md",
     "back-end/target/classes/com/stellerainn/backend/service/UserService.class",
@@ -193,10 +203,6 @@
     "front-end/src/views/settings/ProfileSettings.vue",
     "front-end/src/api/user.js",
     "back-end/target/classes/com/stellerainn/backend/controller/UserController.class",
-    "back-end/src/main/java/com/stellerainn/backend/controller/UserController.java",
-    "database/profile_update.sql",
-    "back-end/target/classes/com/stellerainn/backend/controller/AuthController.class",
-    "back-end/target/classes/com/stellerainn/backend/BackEndApplication.class",
     "proposal.md",
     "plans.md"
   ]

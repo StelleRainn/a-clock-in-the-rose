@@ -4,7 +4,7 @@
 **核心技术**: Vue 3 (Frontend) + Spring Boot (Backend) + MySQL (Database)
 **开发策略**: 前端优先 -> 数据库设计 -> 后端实现 -> 联调
 
-## Phase 1: 前端核心与界面搭建 
+## Milestone 1: 前端核心与界面搭建 (Completed)
 > 目标：完成所有页面的静态展示与交互逻辑，确保用户体验流畅。
 
 - [x] **基础设施搭建**
@@ -14,17 +14,15 @@
 - [x] **路由与布局**
     - [x] 设计 MainLayout (侧边栏 + 顶部栏)
     - [x] 配置 Vue Router
-- [ ] **核心模块开发 (交互与逻辑)**
-    - [ ] **Pomodoro (番茄钟)**: 实现倒计时逻辑、状态管理 (运行/暂停/重置)、完成通知。
-        - *Priority*: High (核心功能)
-    - [x] **Tasks (任务管理)**: 实现任务列表展示、添加、删除、状态切换 (使用 Mock 数据 -> 已对接真实 API)。
-        - *Priority*: High
-    - [ ] **Dashboard (仪表盘)**: 聚合展示今日数据。
-    - [ ] **Stats (统计)**: 集成 ECharts/Chart.js 展示图表。
+- [x] **核心模块开发 (交互与逻辑)**
+    - [x] **Pomodoro (番茄钟)**: 实现倒计时逻辑、状态管理 (运行/暂停/重置)、完成通知。
+    - [x] **Tasks (任务管理)**: 实现任务列表展示、添加、删除、状态切换。
+    - [x] **Dashboard (仪表盘)**: 聚合展示今日数据。
+    - [x] **Stats (统计)**: 集成 ECharts/Chart.js 展示图表。
     - [x] **Auth (认证)**: 登录/注册表单验证。
 
-## Phase 1.5: 细节打磨与体验优化 
-> 目标：在核心功能可用的基础上，提升用户体验和系统稳定性。交付可用的产品。
+## Milestone 1.5: 细节打磨与体验优化 (Completed)
+> 目标：在核心功能可用的基础上，提升用户体验和系统稳定性。
 
 - [x] **Task (任务管理) 进阶**:
     - [x] **看板视图 (Kanban View)**: 实现类似 Trello 的拖拽任务管理。
@@ -36,21 +34,20 @@
     - [x] **全屏专注模式**: 提供沉浸式 UI。
 - [x] **Dashboard (仪表盘) 增强**:
     - [x] **日历视图**: 在日历上展示每日的任务完成情况和专注时长。
-    - [ ] **待办事项提醒**: 临近截止日期的任务高亮显示。
 
-## Phase 2: 第一次功能迭代
-> 目标：趣味性内容更新，打造吸引力。引入游戏化机制激励用户，并提供更多个性化选项，增强用户粘性（广度迭代）。
+## Milestone 2: 游戏化与个性化 (Completed)
+> 目标：趣味性内容更新，打造吸引力。
 
 - [x] **Gamification (游戏化系统)**:
-    - [x] **等级系统 (Leveling)**: 根据专注时长计算 XP，提升用户等级 (e.g., Novice -> Master)。
-    - [x] **成就徽章 (Achievements)**: 达成特定条件解锁徽章 (e.g., "专注 10 小时", "连续打卡 7 天")。
+    - [x] **等级系统 (Leveling)**: 根据专注时长计算 XP，提升用户等级。
+    - [x] **成就徽章 (Achievements)**: 达成特定条件解锁徽章。
     - [x] **连胜纪录 (Streaks)**: 追踪连续登录/专注天数。
 - [x] **Personalization (个性化)**:
     - [x] **用户资料**: 上传头像、修改昵称、个性签名。
 - [x] **Social (社交分享)**:
-    - [x] **专注卡片 (Focus Card)**: 生成精美的“今日总结”图片，包含专注时长、完成任务数，方便分享至社交媒体。
+    - [x] **专注卡片 (Focus Card)**: 生成精美的“今日总结”图片。
 
-## Phase 3: 第二次功能迭代 (已完成)
+## Milestone 3: 深度与专业化 (Completed)
 > 目标：兼具深度与广度、探索更多功能，面向专业化、硬核功能
 
 - [x] **Task Management Advanced (任务管理进阶)**:
@@ -64,29 +61,40 @@
     - [x] 支持导出任务清单 (CSV)。
 - [x] **Focus Analytics Pro (高阶统计)**:
   - [x] **Heatmap (热力图)**: 类似 GitHub 贡献图的专注热力展示。
-  - [x] **Tag Analysis (标签分析)**: 基于标签的时间分布统计 (e.g., #Study vs #Work)。
+  - [x] **Tag Analysis (标签分析)**: 基于标签的时间分布统计。
 - [x] **Immersive Suite (沉浸体验增强)**:
-  - [x] **Zen Note (防走神便签)**: 专注时的快速记录板，捕捉稍纵即逝的想法而不中断心流。
+  - [x] **Zen Note (防走神便签)**: 专注时的快速记录板。
   - [x] **Dark Mode (深色模式)**: 全局适配 Element Plus 深色主题。
 
-## Phase 4: 美术迭代 & 智能化 (进行中)
-> 目标：大幅优化页面设计，引入 AI 能力
+## Milestone 4: 美术迭代 (Completed)
+> 目标：大幅优化页面设计，打造 "Immersive Flow" 体验。
 
-- [ ] **AI 助手**:
-  - [ ] 引入 LLM API，分析用户数据，给出智能建议
-  - [ ] 做出 AI 聊天窗口，支持 LLM 对话
-- [ ] **Immersive Suite (沉浸体验增强)**:
-  - [ ] **Sound Mixer (白噪音混音)**: 支持同时播放多种背景音（雨声+咖啡馆）并调节音量。
-- [ ] **Productivity (效率工具)**:
-  - [ ] **Keyboard Shortcuts (快捷键)**: 支持 `N` 新建任务, `Space` 暂停计时等快捷操作。
+- [x] **UI 重塑 (Redesign)**:
+  - [x] **Glassmorphism**: 全面引入毛玻璃风格。
+  - [x] **Navigation**: 移除侧边栏，转向顶部双 Header 导航。
+  - [x] **Dynamic Backgrounds**: 支持动态背景与智能主题色适配。
+- [x] **Focus Station (New Home)**:
+  - [x] **Hero Timer**: 首页首屏即为沉浸式番茄钟。
+  - [x] **Bento Grid**: 次级板块采用网格布局，展示热力图与任务概览。
+- [x] **UX Enhancements**:
+  - [x] **Quick Toggles**: 快速切换专注模式。
+  - [x] **Task Selector**: 首页集成任务选择器。
+  - [x] **Calendar View**: 独立的数据回顾页面。
+
+## Milestone 5: 智能化与全平台 (Future)
+> 目标：引入 AI 能力，实现移动端适配，完善系统部署。
+
+- [ ] **AI Assistant (AI 助手)**:
+  - [ ] **LLM Integration**: 接入大模型 API。
+  - [ ] **Smart Suggestions**: 分析用户习惯，给出最佳专注时间建议。
+  - [ ] **Daily Summary**: AI 生成每日/每周专注报告。
 - [ ] **Mobile Adaptation (移动端适配)**:
-  - [ ] 优化侧边栏在小屏幕下的折叠逻辑。
-  - [ ] 优化 Dashboard 和 Task List 的卡片布局。
-
-
-## Phase 5: 系统联调与部署
-> 目标：前后端对接，完善系统。
-
-- [x] **接口联调**: 前端 Axios 对接真实后端 API。
-- [x] **功能完善**: 错误处理 (404/500)、加载状态、权限控制 (未登录跳转)。
-- [ ] **部署准备**: Docker 镜像或常规部署文档。
+  - [ ] **Responsive Layout**: 适配手机屏幕尺寸。
+  - [ ] **Touch Optimization**: 优化触摸交互体验。
+- [ ] **System Polish (系统完善)**:
+  - [ ] **Sound Mixer**: 多音轨白噪音混音。
+  - [ ] **Shortcuts**: 全局键盘快捷键。
+  - [ ] **I18n**: 多语言支持。
+- [ ] **Deployment (部署)**:
+  - [ ] Docker 容器化。
+  - [ ] 生产环境部署文档。

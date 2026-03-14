@@ -6,6 +6,7 @@ import CalendarView from '../views/calendar/CalendarView.vue'
 import TaskListView from '../views/tasks/TaskListView.vue'
 import PomodoroTimer from '../views/pomodoro/PomodoroTimer.vue'
 import StatsOverview from '../views/stats/StatsOverview.vue'
+import AiAssistantView from '../views/ai/AiAssistantView.vue'
 import ProfileSettings from '../views/settings/ProfileSettings.vue'
 
 const router = createRouter({
@@ -45,6 +46,11 @@ const router = createRouter({
           path: 'stats',
           name: 'stats',
           component: StatsOverview
+        },
+        {
+          path: 'intelligent',
+          name: 'intelligent',
+          component: AiAssistantView
         },
         {
           path: 'profile',
