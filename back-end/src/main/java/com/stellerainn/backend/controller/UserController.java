@@ -36,7 +36,11 @@ public class UserController {
         existingUser.setBio(user.getBio());
         existingUser.setGender(user.getGender());
         existingUser.setWebsite(user.getWebsite());
-        // existingUser.setEmail(user.getEmail()); // Optional
+        
+        // Update Gemini API Key if provided
+        if (user.getGeminiApiKey() != null) {
+            existingUser.setGeminiApiKey(user.getGeminiApiKey());
+        }
         
         userService.updateProfile(existingUser);
         existingUser.setPassword(null);

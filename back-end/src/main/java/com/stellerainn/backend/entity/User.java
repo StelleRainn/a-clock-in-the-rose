@@ -16,6 +16,9 @@ public class User {
     private String gender; // MALE, FEMALE, OTHER
     private String website;
     
+    // AI Integration
+    private String geminiApiKey;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

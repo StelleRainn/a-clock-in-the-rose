@@ -7,6 +7,9 @@ import org.apache.ibatis.annotations.*;
 public interface UserMapper {
 
     @Select("SELECT * FROM users WHERE username = #{username}")
+    @Results({
+        @Result(property = "geminiApiKey", column = "gemini_api_key")
+    })
     User findByUsername(String username);
 
     @Insert("INSERT INTO users(username, password, email) VALUES(#{username}, #{password}, #{email})")
@@ -14,9 +17,12 @@ public interface UserMapper {
     void insert(User user);
     
     @Select("SELECT * FROM users WHERE id = #{id}")
+    @Results({
+        @Result(property = "geminiApiKey", column = "gemini_api_key")
+    })
     User findById(Long id);
 
     @Update("UPDATE users SET nickname=#{nickname}, avatar_url=#{avatarUrl}, bio=#{bio}, " +
-            "gender=#{gender}, website=#{website}, email=#{email} WHERE id=#{id}")
+            "gender=#{gender}, website=#{website}, email=#{email}, gemini_api_key=#{geminiApiKey} WHERE id=#{id}")
     void updateProfile(User user);
 }

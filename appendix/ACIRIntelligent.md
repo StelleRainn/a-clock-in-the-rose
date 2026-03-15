@@ -55,9 +55,11 @@
     *   在发送请求前，前端自动收集当前用户的上下文（如：今日专注时长、待办任务 Top 3），组装成 System Prompt 的一部分。
     *   *Prompt 示例*: "You are ACIR, a productivity assistant. The user has focused for 25 mins today and has 3 pending tasks..."
 
-### 3.2 环境变量配置
-*   需要创建 `.env` 文件存储 `VITE_GEMINI_API_KEY`。
-*   **注意**: 纯前端调用存在 Key 泄露风险。在生产环境中，建议迁移至 Spring Boot 后端代理请求。但作为 Milestone 5 原型，前端直连可行。
+### 3.2 API Key 配置 (Security Update)
+*   **不再使用** `.env` 存储硬编码 Key (避免泄露)。
+*   **用户配置**: 在 `Profile Settings` 页面手动输入 Gemini API Key。
+*   **持久化**: Key 将加密存储（或安全存储）在后端数据库 `users` 表中，每次对话时动态加载。
+*   **Fallback**: 如果未配置，AI 功能将提示跳转设置。
 
 ---
 
@@ -87,7 +89,7 @@
 
 ### Google Gemini API (JavaScript SDK)
 
-API_KEY: `AIzaSyBOh20Hlq57VXa3_P0NXpm6qY6uDPsZkVo` 
+API_KEY: `YOUR_GEMINI_API_KEY` 
 
 ```js
 import { GoogleGenAI } from "@google/genai";

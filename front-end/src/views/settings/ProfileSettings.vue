@@ -40,6 +40,18 @@
           <el-input v-model="form.website" placeholder="https://your-site.com" />
         </el-form-item>
 
+        <el-divider content-position="left">AI Configuration</el-divider>
+
+        <el-form-item label="Gemini API Key">
+          <el-input 
+            v-model="form.geminiApiKey" 
+            type="password" 
+            show-password 
+            placeholder="AIzaSy..." 
+          />
+          <div class="hint">Required for Intelligent Assistant. Stored securely.</div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" @click="saveProfile">Save Changes</el-button>
         </el-form-item>
@@ -56,11 +68,11 @@
       <div class="export-section">
         <p class="export-desc">Download your personal data in CSV format.</p>
         <div class="export-buttons">
-          <el-button @click="handleExportTasks" :loading="exportingTasks" icon="List">
-            Export Tasks
+          <el-button @click="handleExportTasks" :loading="exportingTasks">
+            <el-icon><List /></el-icon> Export Tasks
           </el-button>
-          <el-button @click="handleExportPomodoro" :loading="exportingPomodoro" icon="Timer">
-            Export Focus Records
+          <el-button @click="handleExportPomodoro" :loading="exportingPomodoro">
+            <el-icon><Timer /></el-icon> Export Focus Records
           </el-button>
         </div>
       </div>
@@ -87,7 +99,8 @@ const form = reactive({
   avatarUrl: '',
   bio: '',
   gender: '',
-  website: ''
+  website: '',
+  geminiApiKey: ''
 })
 
 const fetchProfile = async () => {
@@ -99,6 +112,7 @@ const fetchProfile = async () => {
       Object.assign(form, res)
     }
   } catch (e) {
+    console.error('Fetch profile error:', e)
     ElMessage.error('Failed to load profile')
   } finally {
     loading.value = false
@@ -108,10 +122,18 @@ const fetchProfile = async () => {
 const saveProfile = async () => {
   if (!userStore.user || !userStore.user.id) return
   try {
-    await updateUserProfile(userStore.user.id, form)
-    ElMessage.success('Profile updated successfully')
+    const updatedUser = await updateUserProfile(userStore.user.id, form)
+    console.log('Update response:', updatedUser) // Debug log
+    if (updatedUser) {
+      userStore.setUser(updatedUser)
+      ElMessage.success('Profile updated successfully')
+    } else {
+      console.warn('Updated user is empty')
+      // Even if empty, maybe success?
+    }
   } catch (e) {
-    ElMessage.error('Failed to update profile')
+    console.error('Update profile error:', e)
+    ElMessage.error('Failed to update profile: ' + (e.message || 'Unknown error'))
   }
 }
 
@@ -133,6 +155,7 @@ const handleExportTasks = async () => {
     downloadFile(data, 'my_tasks.csv')
     ElMessage.success('Tasks exported successfully')
   } catch (e) {
+    console.error(e)
     ElMessage.error('Failed to export tasks')
   } finally {
     exportingTasks.value = false
@@ -147,6 +170,7 @@ const handleExportPomodoro = async () => {
     downloadFile(data, 'my_focus_records.csv')
     ElMessage.success('Focus records exported successfully')
   } catch (e) {
+    console.error(e)
     ElMessage.error('Failed to export records')
   } finally {
     exportingPomodoro.value = false

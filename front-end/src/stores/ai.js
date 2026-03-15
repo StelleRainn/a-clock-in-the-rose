@@ -13,9 +13,9 @@ export const useAiStore = defineStore('ai', () => {
   const isLoading = ref(false)
   const currentModel = ref('gemini-3-flash-preview') 
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-  // Initialize the client
-  const ai = new GoogleGenAI({ apiKey })
+  // Initialize the client dynamically
+  // const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+  // const ai = new GoogleGenAI({ apiKey })
 
   const clearMessages = () => {
     messages.value = []
@@ -73,6 +73,20 @@ Guidelines:
       content: userText,
       timestamp: new Date()
     })
+
+    console.log('User Store Data:', userStore.user) // Debug
+    const apiKey = userStore.user?.geminiApiKey || userStore.user?.gemini_api_key || import.meta.env.VITE_GEMINI_API_KEY
+    if (!apiKey) {
+      messages.value.push({
+        role: 'model',
+        content: "Please configure your Gemini API Key in **Profile Settings** first.",
+        isError: true,
+        timestamp: new Date()
+      })
+      return
+    }
+
+    const ai = new GoogleGenAI({ apiKey })
 
     isLoading.value = true
 

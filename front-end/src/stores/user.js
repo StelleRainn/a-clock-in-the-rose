@@ -40,6 +40,7 @@ export const useUserStore = defineStore('user', () => {
     user,
     token,
     login,
-    logout
+    logout,
+    setUser
   }
 })
