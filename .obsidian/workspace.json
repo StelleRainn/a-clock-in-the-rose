@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "063985d8ea086468",
+        "id": "8035f4a853dd6df1",
         "type": "tabs",
         "children": [
           {
-            "id": "2b3bdc3431a7c044",
+            "id": "6e38f3b6a0c5bd45",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "appendix/ACIRIntelligent.md",
-                "mode": "preview",
-                "source": true
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "ACIRIntelligent"
+              "title": "New tab"
             }
           }
         ]
@@ -156,13 +152,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "appendix/ACIRIntelligent.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of ACIRIntelligent"
+              "title": "Outline"
             }
           }
         ],
@@ -183,14 +178,14 @@
       "bases:Create new base": false
     }
   },
-  "active": "2b3bdc3431a7c044",
+  "active": "6e38f3b6a0c5bd45",
   "lastOpenFiles": [
+    "appendix/ACIRIntelligent.md",
     "front-end/src/views/ai/AiAssistantView.vue",
     "front-end/src/stores/ai.js",
     "appendix/plans.md",
     "front-end/node_modules/@google",
     "front-end/src/views/ai",
-    "appendix/ACIRIntelligent.md",
     "appendix/optimized.md",
     "appendix/milestone.md",
     "appendix/proposal.md",

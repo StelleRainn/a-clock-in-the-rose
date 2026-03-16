@@ -1,7 +1,52 @@
 <template>
   <div class="ai-view">
-    <!-- Chat Container -->
-    <div class="chat-container" ref="chatContainerRef">
+    <!-- Sidebar for Chat History -->
+    <div class="chat-sidebar" :class="{ 'sidebar-open': isSidebarOpen }">
+      <div class="sidebar-header">
+        <el-button type="primary" class="new-chat-btn" @click="handleNewChat">
+          <el-icon><Plus /></el-icon> New Chat
+        </el-button>
+        <el-button class="mobile-close-btn" circle @click="isSidebarOpen = false">
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </div>
+      
+      <div class="sessions-list" v-loading="isSessionsLoading">
+        <div v-if="sessions.length === 0 && !isSessionsLoading" class="no-sessions">
+          No previous chats
+        </div>
+        <div 
+          v-for="session in sessions" 
+          :key="session.id"
+          class="session-item"
+          :class="{ 'active': currentSessionId === session.id }"
+          @click="selectSession(session.id)"
+        >
+          <el-icon><ChatDotSquare /></el-icon>
+          <span class="session-title">{{ session.title }}</span>
+          <el-button 
+            type="danger" 
+            link 
+            class="delete-btn" 
+            @click.stop="deleteSession(session.id)"
+          >
+            <el-icon><Delete /></el-icon>
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="chat-main">
+      <div class="mobile-header">
+        <el-button circle @click="isSidebarOpen = true">
+          <el-icon><Menu /></el-icon>
+        </el-button>
+        <span class="mobile-title">ACIR Intelligent</span>
+      </div>
+
+      <!-- Chat Container -->
+      <div class="chat-container" ref="chatContainerRef">
       <div v-if="messages.length === 0" class="empty-state">
         <el-icon :size="64" class="ai-icon"><Cpu /></el-icon>
         <h2>ACIR Intelligent</h2>
@@ -88,6 +133,7 @@
         AI can make mistakes. Please verify important information.
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -95,8 +141,9 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useAiStore } from '@/stores/ai'
 import { useUserStore } from '@/stores/user'
-import { Cpu, UserFilled, Position, ChatDotRound } from '@element-plus/icons-vue'
+import { Cpu, UserFilled, Position, ChatDotRound, Plus, ChatDotSquare, Delete, Menu, Close } from '@element-plus/icons-vue'
 import MarkdownIt from 'markdown-it'
+import { ElMessageBox, ElMessage } from 'element-plus'
 
 // Initialize
 const aiStore = useAiStore()
@@ -109,9 +156,13 @@ const md = new MarkdownIt({
 
 const chatContainerRef = ref(null)
 const inputMessage = ref('')
+const isSidebarOpen = ref(false)
 
 // Computed
 const messages = computed(() => aiStore.messages)
+const sessions = computed(() => aiStore.sessions)
+const currentSessionId = computed(() => aiStore.currentSessionId)
+const isSessionsLoading = computed(() => aiStore.isSessionsLoading)
 const isLoading = computed(() => aiStore.isLoading)
 const userAvatar = computed(() => userStore.user?.avatarUrl || '')
 
@@ -130,6 +181,31 @@ const renderMarkdown = (text) => {
 const formatTime = (date) => {
   if (!date) return ''
   return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const handleNewChat = () => {
+  aiStore.startNewSession()
+  if (window.innerWidth <= 768) {
+    isSidebarOpen.value = false
+  }
+}
+
+const selectSession = async (id) => {
+  await aiStore.selectSession(id)
+  if (window.innerWidth <= 768) {
+    isSidebarOpen.value = false
+  }
+}
+
+const deleteSession = (id) => {
+  ElMessageBox.confirm('Are you sure you want to delete this chat?', 'Warning', {
+    confirmButtonText: 'OK',
+    cancelButtonText: 'Cancel',
+    type: 'warning'
+  }).then(() => {
+    aiStore.deleteSession(id)
+    ElMessage.success('Chat deleted')
+  }).catch(() => {})
 }
 
 const scrollToBottom = () => {
@@ -162,6 +238,7 @@ const handleEnter = (e) => {
 watch(() => aiStore.messages.length, scrollToBottom)
 
 onMounted(() => {
+  aiStore.loadSessions()
   scrollToBottom()
 })
 
@@ -169,22 +246,138 @@ onMounted(() => {
 
 <style scoped>
 .ai-view {
-  height: calc(100vh - 80px); /* Adjust based on header height */
+  height: 100vh; /* Full viewport height */
+  width: 100vw;  /* Full viewport width */
+  position: fixed; /* Fix to viewport to override MainLayout padding */
+  top: 0;
+  left: 0;
+  display: flex;
+  overflow: hidden;
+  background: transparent; /* Remove background */
+  z-index: 10; /* Ensure it's above background but below header if needed */
+}
+
+/* Sidebar Styles */
+.chat-sidebar {
+  width: 260px;
+  background: rgba(255, 255, 255, 0.5); /* Lighter glass */
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+  z-index: 20;
+  padding-top: 80px; /* Clear the global header */
+}
+.dark .chat-sidebar {
+  background: rgba(20, 20, 20, 0.5);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.new-chat-btn {
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 8px;
+}
+.mobile-close-btn {
+  display: none;
+}
+
+.sessions-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 10px 20px;
+}
+.no-sessions {
+  text-align: center;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  margin-top: 20px;
+}
+.session-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  color: var(--el-text-color-regular);
+  transition: all 0.2s;
+  position: relative;
+}
+.session-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.dark .session-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.session-item.active {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+.dark .session-item.active {
+  background: rgba(var(--el-color-primary-rgb), 0.2);
+}
+.session-title {
+  margin-left: 10px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+.delete-btn {
+  opacity: 0;
+  padding: 4px;
+}
+.session-item:hover .delete-btn {
+  opacity: 1;
+}
+
+/* Main Chat Area */
+.chat-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 20px;
+  min-width: 0; /* Important for flex child truncating */
+  padding-top: 80px; /* Clear the global header */
+  background: transparent;
+  align-items: center; /* Center the chat container horizontally */
+  width: calc(100vw - 260px); /* Fill remaining width minus sidebar */
+}
+
+.mobile-header {
+  display: none;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+.dark .mobile-header {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.mobile-title {
+  font-weight: bold;
+  font-size: 16px;
 }
 
 /* Chat Container */
 .chat-container {
   flex: 1;
+  width: 100%;
+  max-width: 800px; /* Constrain the width like ChatGPT */
   overflow-y: auto;
-  padding: 20px 0;
-  padding-bottom: 100px; /* Space for input */
+  padding: 20px;
+  padding-bottom: 120px; /* Space for input */
   
   /* Hide scrollbar for cleaner look */
   scrollbar-width: thin;
@@ -286,15 +479,14 @@ onMounted(() => {
 }
 
 .ai-bubble {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+  background: var(--el-bg-color); /* More solid background like ChatGPT */
   border-top-left-radius: 2px;
   color: var(--el-text-color-primary);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--el-border-color-lighter);
 }
 .dark .ai-bubble {
-  background: rgba(30, 30, 30, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-darker);
 }
 
 .user-bubble {
@@ -354,19 +546,18 @@ onMounted(() => {
 
 .input-wrapper {
   position: relative;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
+  background: var(--el-bg-color); /* Solid background instead of glass for readability */
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--el-border-color-lighter);
   display: flex;
   align-items: flex-end;
   padding: 8px;
   transition: all 0.3s;
 }
 .dark .input-wrapper {
-  background: rgba(40, 40, 40, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--el-bg-color-overlay);
+  border-color: var(--el-border-color-darker);
 }
 
 .input-wrapper:focus-within {
@@ -417,6 +608,32 @@ onMounted(() => {
 }
 .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
 .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+@media (max-width: 768px) {
+  .ai-view {
+    border-radius: 0;
+  }
+  .chat-sidebar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    transform: translateX(-100%);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  }
+  .chat-sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+  .mobile-close-btn {
+    display: block;
+  }
+  .mobile-header {
+    display: flex;
+  }
+  .session-item .delete-btn {
+    opacity: 1; /* Always show on mobile */
+  }
+}
 
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }

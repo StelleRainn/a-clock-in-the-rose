@@ -4,18 +4,70 @@ import { GoogleGenAI } from "@google/genai"
 import { useUserStore } from './user'
 import { usePomodoroStore } from './pomodoro'
 import { getTasks } from '@/api/task'
+import { getChatSessions, createChatSession, getChatMessages, saveChatMessage, deleteChatSession, updateChatSessionTitle } from '@/api/chat'
 
 export const useAiStore = defineStore('ai', () => {
   const userStore = useUserStore()
   const pomodoroStore = usePomodoroStore()
   
+  const sessions = ref([])
+  const currentSessionId = ref(null)
   const messages = ref([])
   const isLoading = ref(false)
+  const isSessionsLoading = ref(false)
   const currentModel = ref('gemini-3-flash-preview') 
 
-  // Initialize the client dynamically
-  // const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-  // const ai = new GoogleGenAI({ apiKey })
+  // Load all sessions for current user
+  const loadSessions = async () => {
+    if (!userStore.user?.id) return
+    isSessionsLoading.value = true
+    try {
+      const data = await getChatSessions(userStore.user.id)
+      sessions.value = data || []
+    } catch (e) {
+      console.error('Failed to load chat sessions', e)
+    } finally {
+      isSessionsLoading.value = false
+    }
+  }
+
+  // Load a specific session's messages
+  const selectSession = async (sessionId) => {
+    currentSessionId.value = sessionId
+    messages.value = []
+    isLoading.value = true
+    try {
+      const data = await getChatMessages(sessionId)
+      messages.value = (data || []).map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.createdAt)
+      }))
+    } catch (e) {
+      console.error('Failed to load messages', e)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Start a new chat session
+  const startNewSession = () => {
+    currentSessionId.value = null
+    messages.value = []
+  }
+
+  const deleteSession = async (id) => {
+    try {
+      await deleteChatSession(id)
+      sessions.value = sessions.value.filter(s => s.id !== id)
+      if (currentSessionId.value === id) {
+        startNewSession()
+      }
+    } catch (e) {
+      console.error('Failed to delete session', e)
+    }
+  }
 
   const clearMessages = () => {
     messages.value = []
@@ -67,7 +119,32 @@ Guidelines:
   const sendMessage = async (userText) => {
     if (!userText.trim()) return
 
-    // 1. Add User Message to State
+    // 1. Ensure we have a session
+    if (!currentSessionId.value) {
+      if (!userStore.user?.id) {
+        messages.value.push({ role: 'model', content: 'Please login first.', isError: true, timestamp: new Date() })
+        return
+      }
+      try {
+        // Generate a short title from the first message
+        const title = userText.length > 20 ? userText.substring(0, 20) + '...' : userText
+        const newSession = await createChatSession({ userId: userStore.user.id, title })
+        currentSessionId.value = newSession.id
+        sessions.value.unshift(newSession) // Add to top of list
+      } catch (e) {
+        console.error('Failed to create session', e)
+        return
+      }
+    }
+
+    // 2. Save user message to backend
+    try {
+      await saveChatMessage(currentSessionId.value, { role: 'user', content: userText })
+    } catch (e) {
+      console.error('Failed to save user message', e)
+    }
+
+    // 3. Add User Message to State
     messages.value.push({
       role: 'user',
       content: userText,
@@ -124,6 +201,13 @@ Guidelines:
       // In @google/genai SDK, response.text is a property, not a function
       const responseText = response.text || "No response text"
 
+      // Save AI message to backend
+      try {
+        await saveChatMessage(currentSessionId.value, { role: 'model', content: responseText })
+      } catch (e) {
+        console.error('Failed to save AI message', e)
+      }
+
       // 5. Add AI Response to State
       messages.value.push({
         role: 'model',
@@ -145,9 +229,16 @@ Guidelines:
   }
 
   return {
+    sessions,
+    currentSessionId,
     messages,
     isLoading,
+    isSessionsLoading,
     currentModel,
+    loadSessions,
+    selectSession,
+    startNewSession,
+    deleteSession,
     sendMessage,
     clearMessages
   }
