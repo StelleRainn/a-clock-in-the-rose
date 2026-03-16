@@ -112,7 +112,7 @@
     </el-card>
 
     <el-row :gutter="20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12" class="mb-20">
         <el-card>
           <template #header>
             <span>Focus Distribution by Tag</span>
@@ -120,7 +120,7 @@
           <div ref="tagChartRef" style="height: 300px;"></div>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12">
         <el-card>
           <template #header>
             <span>Task Status Distribution</span>
@@ -722,5 +722,21 @@ onUnmounted(() => {
   margin-top: 30px;
   border-top: 1px solid rgba(0,0,0,0.05);
   padding-top: 15px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .stats-container {
+    padding: 10px;
+  }
+  
+  .share-section {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .share-section .el-button {
+    width: 100%;
+  }
 }
 </style>

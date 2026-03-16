@@ -207,9 +207,26 @@ const removeWidget = (id) => {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  .dashboard-widgets {
+    padding: 20px 16px;
+    min-height: auto;
+  }
+
+  .widgets-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .widgets-header h2 {
+    font-size: 1.25rem;
+  }
+  
   .widgets-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
+  
   .widget-wrapper.col-2 {
     grid-column: span 1;
   }

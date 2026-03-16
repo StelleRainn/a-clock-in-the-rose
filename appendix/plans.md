@@ -90,9 +90,9 @@
   - [x] **History Management**: 完整的会话管理（新建/删除/切换），支持历史记录持久化存储 (MySQL)。
   - [x] **Security**: API Key 跟随账户配置（加密存储于数据库），移除前端硬编码。
   - [x] **Immersive UI**: 全屏 Glassmorphism 设计，类 ChatGPT 的极简交互体验。
-- [ ] **Mobile Adaptation (移动端适配)**:
-  - [ ] **Responsive Layout**: 适配手机屏幕尺寸。
-  - [ ] **Touch Optimization**: 优化触摸交互体验。
+- [x] **Mobile Adaptation (移动端适配)**:
+  - [x] **Responsive Layout**: 适配手机屏幕尺寸 (Bottom Navigation + Single Column)。
+  - [x] **Touch Optimization**: 优化触摸交互体验 (Header/AI 布局优化)。
 - [ ] **System Polish (系统完善)**:
   - [ ] **Sound Mixer**: 多音轨白噪音混音。
   - [ ] **Shortcuts**: 全局键盘快捷键。

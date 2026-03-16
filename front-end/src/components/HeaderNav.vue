@@ -391,4 +391,44 @@ onUnmounted(() => {
 .user-profile:hover {
   transform: scale(1.05);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .header-nav {
+    padding: 0 16px;
+  }
+  
+  .nav-center {
+    display: none; /* Hide main menu links on mobile */
+  }
+  
+  .nav-left {
+    width: auto;
+  }
+  
+  .nav-right {
+    width: auto;
+    flex: 1;
+  }
+  
+  /* Hide logo text on mobile */
+  .logo-text {
+    display: none; 
+  }
+
+  /* Make sure nav-right is aligned properly */
+  .nav-right {
+    width: auto;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  /* Hide the "Add Task" circle button specifically, but NOT the theme toggle */
+  /* The theme toggle is an el-switch, not el-button */
+  /* The add button is el-button circle plain */
+  
+  .nav-right .el-button.is-circle {
+    display: none;
+  }
+}
 </style>

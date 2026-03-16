@@ -70,4 +70,16 @@ import WidgetTodoList from '@/components/widgets/WidgetTodoList.vue'
   text-align: center;
   color: var(--el-text-color-secondary);
 }
+
+@media (max-width: 768px) {
+  .calendar-view {
+    padding: 20px 16px;
+  }
+  .page-header {
+    margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+}
 </style>

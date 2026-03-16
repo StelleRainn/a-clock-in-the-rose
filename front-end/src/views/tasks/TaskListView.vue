@@ -94,20 +94,30 @@
               </template>
             </el-table-column>
 
-            <el-table-column prop="title" label="Task Name">
+            <el-table-column prop="title" label="Task Name" min-width="200">
               <template #default="scope">
-                <span :class="{'overdue-text': isOverdue(scope.row), 'neardue-text': isNearDue(scope.row)}">
-                  {{ scope.row.title }}
-                </span>
-                <el-tooltip v-if="isOverdue(scope.row)" content="Overdue!" placement="top">
-                  <el-icon class="alert-icon overdue"><Warning /></el-icon>
-                </el-tooltip>
-                <el-tooltip v-else-if="isNearDue(scope.row)" content="Due soon!" placement="top">
-                  <el-icon class="alert-icon neardue"><WarningFilled /></el-icon>
-                </el-tooltip>
+                <div class="task-info-cell">
+                  <span :class="{'overdue-text': isOverdue(scope.row), 'neardue-text': isNearDue(scope.row)}">
+                    {{ scope.row.title }}
+                  </span>
+                  <el-tooltip v-if="isOverdue(scope.row)" content="Overdue!" placement="top">
+                    <el-icon class="alert-icon overdue"><Warning /></el-icon>
+                  </el-tooltip>
+                  <el-tooltip v-else-if="isNearDue(scope.row)" content="Due soon!" placement="top">
+                    <el-icon class="alert-icon neardue"><WarningFilled /></el-icon>
+                  </el-tooltip>
+                  
+                  <!-- Mobile Meta Info -->
+                  <div v-if="isMobile" class="mobile-meta">
+                    <el-tag size="small" :type="getPriorityType(scope.row.priority)" effect="plain" class="mr-1">{{ scope.row.priority }}</el-tag>
+                    <span v-if="scope.row.dueDate" class="mobile-date" :class="{'overdue-text': isOverdue(scope.row)}">
+                      {{ formatDateShort(scope.row.dueDate) }}
+                    </span>
+                  </div>
+                </div>
               </template>
             </el-table-column>
-            <el-table-column label="Tags" width="200">
+            <el-table-column label="Tags" width="200" v-if="!isMobile">
               <template #default="scope">
                 <el-tag 
                   v-for="tag in scope.row.tags" 
@@ -122,27 +132,33 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="priority" label="Priority" width="120">
+            <el-table-column prop="priority" label="Priority" width="120" v-if="!isMobile">
               <template #default="scope">
                 <el-tag :type="getPriorityType(scope.row.priority)">{{ scope.row.priority }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="Status" width="120">
+            <el-table-column prop="status" label="Status" width="120" v-if="!isMobile">
                <template #default="scope">
                 <el-tag :type="getStatusType(scope.row.status)">{{ scope.row.status }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="dueDate" label="Due Date" width="180">
+            <el-table-column prop="dueDate" label="Due Date" width="180" v-if="!isMobile">
                <template #default="scope">
                  <span :class="{'overdue-text': isOverdue(scope.row), 'neardue-text': isNearDue(scope.row)}">
                    {{ formatDate(scope.row.dueDate) }}
                  </span>
                </template>
             </el-table-column>
-            <el-table-column label="Actions" width="200">
+            <el-table-column label="Actions" :width="isMobile ? 100 : 200" fixed="right">
               <template #default="scope">
-                <el-button size="small" @click="handleEdit(scope.row)">Edit</el-button>
-                <el-button size="small" type="danger" @click="handleDelete(scope.row)">Delete</el-button>
+                <div class="action-buttons">
+                  <el-button v-if="!isMobile" size="small" @click.stop="handleEdit(scope.row)">Edit</el-button>
+                  <el-button v-if="!isMobile" size="small" type="danger" @click.stop="handleDelete(scope.row)">Delete</el-button>
+                  
+                  <!-- Mobile Actions -->
+                  <el-button v-if="isMobile" size="small" icon="Edit" circle @click.stop="handleEdit(scope.row)" />
+                  <el-button v-if="isMobile" size="small" type="danger" icon="Delete" circle @click.stop="handleDelete(scope.row)" />
+                </div>
               </template>
             </el-table-column>
           </el-table>
@@ -300,7 +316,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTasks, createTask, updateTask, deleteTask, reorderTasks } from '@/api/task'
 import { getTags, createTag } from '@/api/tag'
@@ -316,8 +332,22 @@ const activeName = ref('list')
 const tableData = ref([])
 const loading = ref(false)
 const userStore = useUserStore()
+const isMobile = ref(window.innerWidth < 768)
 
-const dialogVisible = ref(false)
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+  fetchTasks()
+  fetchTags()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
 const dialogTitle = ref('Create Task')
 const isEditMode = ref(false)
 const currentTaskId = ref(null)
@@ -609,7 +639,7 @@ const initSortable = () => {
 }
 
 // Watchers to re-init or destroy sortable
-import { watch } from 'vue'
+// watch is already imported at top
 
 watch([sortBy, searchQuery, selectedFilterTags, activeName, loading], () => {
   nextTick(() => {
@@ -622,10 +652,8 @@ watch([sortBy, searchQuery, selectedFilterTags, activeName, loading], () => {
   })
 })
 
-onMounted(() => {
-  fetchTasks()
-  fetchTags()
-})
+// Original onMounted removed, handled at top
+
 
 const handleTagChange = async (val) => {
   // Check if new tag created
@@ -1075,5 +1103,63 @@ onMounted(() => {
 :deep(.el-table .done-row) {
   opacity: 0.7;
   background-color: var(--el-fill-color-lighter);
+}
+
+/* Mobile Task List Meta */
+.task-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.mobile-date {
+  color: var(--el-text-color-secondary);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  /* Filter Bar */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-bar .el-input,
+  .filter-bar .el-select,
+  .filter-bar .el-button {
+    width: 100% !important;
+  }
+  
+  /* Kanban View */
+  .kanban-board {
+    padding-bottom: 10px;
+    scroll-snap-type: x mandatory;
+  }
+  
+  .kanban-column {
+    min-width: 85vw; /* Almost full width */
+    scroll-snap-align: center;
+    margin-right: 10px;
+  }
+  
+  .kanban-column:last-child {
+    margin-right: 0;
+  }
 }
 </style>

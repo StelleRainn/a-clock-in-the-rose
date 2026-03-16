@@ -627,15 +627,40 @@ onMounted(() => {
     height: 100%;
     transform: translateX(-100%);
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.9); /* More opaque for mobile */
+    z-index: 100;
   }
+  .dark .chat-sidebar {
+    background: rgba(20, 20, 20, 0.95);
+  }
+  
   .chat-sidebar.sidebar-open {
     transform: translateX(0);
   }
+  
+  .chat-main {
+    width: 100%; /* Full width on mobile */
+    padding-top: 0;
+  }
+  
+  .input-area {
+    left: 0;
+    width: 100%;
+    padding-bottom: 80px; /* Space for MobileNavBar */
+  }
+  
+  .input-wrapper {
+    max-width: 90%;
+    border-radius: 20px;
+  }
+  
   .mobile-close-btn {
     display: block;
   }
   .mobile-header {
     display: flex;
+    padding-top: 60px; /* Header height space */
+    margin-top: 10px;
   }
   .session-item .delete-btn {
     opacity: 1; /* Always show on mobile */

@@ -3,8 +3,9 @@
     <!-- Dynamic Background -->
     <div class="background-layer"></div>
     
-    <!-- Top Navigation -->
+    <!-- Top Navigation (Desktop) -->
     <HeaderNav 
+      class="desktop-nav"
       @add-task="showAddTaskDialog" 
       :transparent="isDashboard"
     />
@@ -17,6 +18,12 @@
         </transition>
       </router-view>
     </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <MobileNavBar 
+      class="mobile-nav"
+      @add-task="showAddTaskDialog"
+    />
 
     <!-- Global Task Dialog -->
     <TaskFormDialog
@@ -31,6 +38,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import HeaderNav from '@/components/HeaderNav.vue'
+import MobileNavBar from '@/components/MobileNavBar.vue'
 import TaskFormDialog from '@/components/TaskFormDialog.vue'
 import { createTask } from '@/api/task'
 import { useUserStore } from '@/stores/user'
@@ -110,5 +118,43 @@ const handleTaskSubmit = async (payload) => {
 .fade-transform-leave-to {
   opacity: 0;
   transform: translateY(-20px);
+}
+
+/* Mobile Adaptation */
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* We no longer hide desktop-nav (HeaderNav) entirely, 
+     instead we let HeaderNav component handle its responsive state (hiding menu links) 
+  */
+  .desktop-nav {
+    /* display: none !important;  <-- REMOVED */
+  }
+  
+  .mobile-nav {
+    display: flex !important;
+  }
+  
+  /* Adjust content wrapper for mobile */
+  .content-wrapper {
+    /* padding-top: 20px; <-- Changed logic below */
+    padding-bottom: 80px; /* Space for bottom nav */
+  }
+
+  /* 
+     If we show HeaderNav on mobile:
+     - It takes 60px height.
+     - So padding-top should be ~60px for non-dashboard pages.
+  */
+  .content-wrapper {
+    padding-top: 60px;
+  }
+  
+  /* Dashboard still needs 0 top padding for hero effect */
+  .main-layout.is-dashboard .content-wrapper {
+    padding-top: 0;
+  }
 }
 </style>

@@ -589,11 +589,66 @@ onUnmounted(() => {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .timer-digits {
-    font-size: 6rem;
+  .timer-section {
+    padding-top: 20px; /* Reduce top padding */
   }
+
+  .timer-digits {
+    font-size: 5rem; /* Smaller font for mobile */
+    letter-spacing: -2px;
+  }
+  
   .mode-toggles {
     transform: scale(0.9);
+    margin-bottom: 1rem;
+    width: 95%;
+    justify-content: center;
+    flex-wrap: nowrap; /* Keep on one line if possible, or scroll */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mode-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+  .timer-controls {
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 90%;
+    justify-content: center;
+  }
+  
+  /* Make Start/Pause button full width on mobile for easier access */
+  .control-btn.main-action {
+    width: 80%;
+    margin-bottom: 0;
+    font-size: 20px;
+    height: 56px;
+  }
+  
+  .zen-note {
+    width: 90%;
+    max-width: 360px;
+    margin-top: 2rem;
+  }
+  
+  .current-task {
+    max-width: 90%;
+    margin-bottom: 2rem;
+  }
+  
+  .task-chip {
+    max-width: 100%;
+  }
+  
+  .task-text {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>

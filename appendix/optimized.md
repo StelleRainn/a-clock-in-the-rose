@@ -18,7 +18,16 @@
 
 ---
 
-## Phase 5 智能化成果归档 (New)
+## Phase 5 智能化与全平台成果归档 (New)
+
+### 移动端适配 (Mobile Adaptation)
+- [x] **导航重构**: 引入 Bottom TabBar (底部导航栏)，在移动端替代顶部菜单，提升单手操作体验。
+- [x] **Header 适配**: 移动端顶部保留精简版 Header (Logo Icon + Profile + Theme)，解决 AI 页面遮挡问题，保持沉浸感。
+- [x] **响应式布局**: 
+  - **Focus Station**: Bento Grid 在移动端自动切换为单列流式布局。
+  - **Task List**: 列表视图自动隐藏次要信息列 (Created At等)，优化移动端展示密度。
+  - **AI Chat**: 侧边栏调整为抽屉模式 (Drawer)，聊天窗口自适应宽度。
+- [x] **交互优化**: 增大移动端按钮点击热区，优化触摸反馈。
 
 ### AI 助手 (ACIR Intelligent)
 - [x] **架构设计**: 采用前端 Store 管理状态 + 后端 REST API 持久化存储的架构。
@@ -34,12 +43,6 @@
 ---
 
 ## 待办与灵感 (Backlog for Phase 5+)
-
-### 移动端适配 (Mobile Adaptation)
-> 计划于 Phase 5 重点攻克
-- [ ] **Bottom Navigation**: 移动端采用底部导航栏代替顶部 Header。
-- [ ] **Touch Optimization**: 优化 Widget 的拖拽和点击体验。
-- [ ] **Layout**: 强制单列布局，避免挤压。
 
 ### 细节体验优化 (UX Polish)
 - [ ] **Transition**: 路由切换动画。
