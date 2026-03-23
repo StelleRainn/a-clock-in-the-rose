@@ -740,7 +740,7 @@ const submitTask = async () => {
     return
   }
 
-  if (!taskForm.title) {
+  if (!taskForm.title || !taskForm.title.trim()) {
     ElMessage.warning('Title is required')
     return
   }
@@ -748,8 +748,16 @@ const submitTask = async () => {
   // Construct payload with tags
   const tagsPayload = selectedTagIds.value.map(id => ({ id }))
   
+  // Handle timezone offset issue for dueDate
+  let formattedDueDate = taskForm.dueDate
+  if (formattedDueDate instanceof Date) {
+    const tzOffset = formattedDueDate.getTimezoneOffset() * 60000;
+    formattedDueDate = new Date(formattedDueDate.getTime() - tzOffset).toISOString().slice(0, 19);
+  }
+  
   const payload = {
     ...taskForm,
+    dueDate: formattedDueDate,
     userId: userStore.user.id,
     tags: tagsPayload
   }

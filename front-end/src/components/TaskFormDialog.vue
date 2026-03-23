@@ -152,15 +152,24 @@ const getRandomColor = () => {
 }
 
 const handleSubmit = () => {
-  if (!form.title) {
+  if (!form.title || !form.title.trim()) {
     ElMessage.warning('Title is required')
     return
   }
   
   const tagsPayload = selectedTagIds.value.map(id => ({ id }))
   
+  // Handle timezone offset issue for dueDate
+  let formattedDueDate = form.dueDate
+  if (formattedDueDate instanceof Date) {
+    // Convert to local ISO string without timezone shift
+    const tzOffset = formattedDueDate.getTimezoneOffset() * 60000;
+    formattedDueDate = new Date(formattedDueDate.getTime() - tzOffset).toISOString().slice(0, 19);
+  }
+  
   const payload = {
     ...form,
+    dueDate: formattedDueDate,
     tags: tagsPayload
   }
   
