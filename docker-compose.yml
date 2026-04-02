@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库容器
+  acir-mysql:
+    image: mysql:8.0
+    container_name: acir-mysql
+    restart: always
+    environment:
+      # 设置 MySQL root 用户的密码，务必与 application.yaml 保持一致
+      MYSQL_ROOT_PASSWORD: 3186287129Qq.
+      MYSQL_DATABASE: ACIR
+      TZ: Asia/Shanghai
+    ports:
+      # 映射 3306 端口到宿主机，方便调试和连接（如果是生产环境且无需外部连接，可注释掉）
+      - "3306:3306"
+    volumes:
+      # 将数据库数据持久化到宿主机目录
+      - ./mysql-data:/var/lib/mysql
+      # 挂载初始化脚本，第一次启动容器时会自动执行
+      - ./database/_localhost-2026_04_02_23_15_46-dump.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - acir-network
+
+  # SpringBoot 后端容器
+  acir-backend:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile
+    container_name: acir-backend
+    restart: always
+    environment:
+      # 覆盖 application.yaml 中的占位符
+      - DB_HOST=acir-mysql
+      - DB_PASSWORD=3186287129Qq.
+      - TZ=Asia/Shanghai
+    ports:
+      # 映射后端端口，前端代理或直接测试时使用
+      - "8080:8080"
+    depends_on:
+      # 等待数据库启动后再启动后端
+      - acir-mysql
+    networks:
+      - acir-network
+
+  # Vue3 + Nginx 前端容器
+  acir-frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    container_name: acir-frontend
+    restart: always
+    ports:
+      # 映射 Nginx 的 80 端口到宿主机的 80 端口（访问网站的入口）
+      - "80:80"
+    depends_on:
+      - acir-backend
+    networks:
+      - acir-network
+
+# 定义内部桥接网络，使得容器可以通过服务名互相通信
+networks:
+  acir-network:
+    driver: bridge

@@ -4,10 +4,11 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # Update database name to match schema.sql
-    url: jdbc:mysql://localhost:3306/ACIR?characterEncoding=utf-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # Use environment variable for database host, fallback to localhost for local dev
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/ACIR?characterEncoding=utf-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 3186287129Qq.
+    # Use environment variable for database password, fallback to local dev password
+    password: ${DB_PASSWORD:3186287129Qq.}
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
