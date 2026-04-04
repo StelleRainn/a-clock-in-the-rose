@@ -46,7 +46,7 @@
       </div>
 
       <!-- Task Selection Dropdown -->
-      <div class="task-selector" v-if="!isImmersive && pomodoroStore.isWorkSession">
+      <div class="task-selector" v-if="!isImmersive && isWorkSession">
         <el-select 
           v-model="selectedTask" 
           placeholder="Select a task to focus on" 
@@ -162,14 +162,19 @@ const currentNoise = ref('none')
 const rainAudio = ref(null)
 const cafeAudio = ref(null)
 const tasks = ref([])
-const selectedTask = ref(pomodoroStore.selectedTaskId)
+const selectedTask = computed({
+  get: () => pomodoroStore.selectedTaskId,
+  set: (val) => pomodoroStore.selectedTaskId = val || null
+})
 const zenNote = ref('')
 
+const isWorkSession = computed(() => pomodoroStore.currentMode === 'pomodoro')
+
 // Sync sessionMode with store state
-watch(() => pomodoroStore.isWorkSession, (isWork) => {
+watch(() => isWorkSession.value, (isWork) => {
   sessionMode.value = isWork ? 'work' : 'break'
   // Update slider value based on current duration setting
-  const duration = isWork ? pomodoroStore.workDuration : pomodoroStore.breakDuration
+  const duration = isWork ? pomodoroStore.pomodoroDuration : (pomodoroStore.currentMode === 'short-break' ? pomodoroStore.shortBreakDuration : pomodoroStore.longBreakDuration)
   sliderValue.value = Math.floor(duration / 60)
 }, { immediate: true })
 
@@ -182,7 +187,7 @@ const handleSliderChange = (val) => {
 }
 
 const handleTaskSelect = (val) => {
-  pomodoroStore.selectTask(val)
+  pomodoroStore.selectedTaskId = val || null
 }
 
 const toggleImmersive = () => {
@@ -260,14 +265,14 @@ const getPriorityType = (priority) => {
 }
 
 const progressColor = computed(() => {
-  return pomodoroStore.isWorkSession ? '#409eff' : '#67c23a'
+  return isWorkSession.value ? '#409eff' : '#67c23a'
 })
 
 onMounted(() => {
   pomodoroStore.fetchTodayCount()
   fetchUserTasks()
   // Initialize slider value correctly on mount
-  const duration = pomodoroStore.isWorkSession ? pomodoroStore.workDuration : pomodoroStore.breakDuration
+  const duration = isWorkSession.value ? pomodoroStore.pomodoroDuration : (pomodoroStore.currentMode === 'short-break' ? pomodoroStore.shortBreakDuration : pomodoroStore.longBreakDuration)
   sliderValue.value = Math.floor(duration / 60)
 })
 </script>

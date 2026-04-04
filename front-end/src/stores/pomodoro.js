@@ -37,7 +37,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   
   const completedPomodoros = ref(0)
   const todayFocusSeconds = ref(0)
-  const selectedTaskId = ref(null)
+  const storedTaskId = localStorage.getItem('pomodoro_selectedTaskId')
+  const selectedTaskId = ref(storedTaskId && storedTaskId !== 'null' ? Number(storedTaskId) : null)
   const pomodorosSinceLongBreak = ref(parseInt(localStorage.getItem('pomodoro_pomodorosSinceLongBreak')) || 0)
 
   let timerInterval = null
@@ -80,6 +81,13 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   watch(bgOverlayOpacity, (val) => localStorage.setItem('pomodoro_bgOverlayOpacity', val))
   watch(currentMode, (val) => localStorage.setItem('pomodoro_currentMode', val))
   watch(pomodorosSinceLongBreak, (val) => localStorage.setItem('pomodoro_pomodorosSinceLongBreak', val))
+  watch(selectedTaskId, (val) => {
+    if (val) {
+      localStorage.setItem('pomodoro_selectedTaskId', val)
+    } else {
+      localStorage.removeItem('pomodoro_selectedTaskId')
+    }
+  })
 
   async function loadCustomBackground() {
     try {
@@ -236,6 +244,21 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
   }
 
+  function updateDuration(durationSeconds) {
+    if (currentMode.value === 'pomodoro') {
+      pomodoroDuration.value = durationSeconds
+    } else if (currentMode.value === 'short-break') {
+      shortBreakDuration.value = durationSeconds
+    } else {
+      longBreakDuration.value = durationSeconds
+    }
+    
+    if (!isRunning.value) {
+      timeLeft.value = currentDuration.value
+      localStorage.setItem('pomodoro_timeLeft', timeLeft.value)
+    }
+  }
+
   async function fetchTodayCount() {
     if (userStore.user?.id) {
       try {
@@ -292,6 +315,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     resetTimer,
     setMode,
     updateSettings,
+    updateDuration,
     fetchTodayCount,
     loadCustomBackground
   }
