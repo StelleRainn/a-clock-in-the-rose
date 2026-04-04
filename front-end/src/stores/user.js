@@ -11,11 +11,6 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('user', JSON.stringify(userData))
   }
 
-  function setToken(tokenData) {
-    token.value = tokenData
-    localStorage.setItem('token', tokenData)
-  }
-
   async function login(loginForm) {
     try {
       const data = await loginApi(loginForm)

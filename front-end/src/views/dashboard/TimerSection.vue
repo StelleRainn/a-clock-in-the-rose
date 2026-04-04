@@ -244,7 +244,7 @@ watch(() => pomodoroStore.backgroundImage, analyzeBackground, { immediate: true 
 
 const currentTaskTitle = computed(() => {
   if (!pomodoroStore.selectedTaskId) return null
-  const task = tasks.value.find(t => t.id === pomodoroStore.selectedTaskId)
+  const task = tasks.value.find(t => String(t.id) === pomodoroStore.selectedTaskId)
   return task ? task.title : null
 })
 
@@ -254,9 +254,9 @@ const pendingTasks = computed(() => {
 
 const handleTaskSelect = (command) => {
   if (command === 'clear') {
-    pomodoroStore.selectedTaskId = null
+    pomodoroStore.selectTask(null)
   } else {
-    pomodoroStore.selectedTaskId = command
+    pomodoroStore.selectTask(command)
   }
 }
 

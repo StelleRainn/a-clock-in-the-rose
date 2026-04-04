@@ -7,6 +7,20 @@ import { ElMessage } from 'element-plus'
 
 export const usePomodoroStore = defineStore('pomodoro', () => {
   const userStore = useUserStore()
+
+  const normalizeTaskId = (taskId) => {
+    if (taskId === null || taskId === undefined || taskId === '' || taskId === 'null') {
+      return null
+    }
+    return String(taskId)
+  }
+
+  const parseTaskIdForApi = (taskId) => {
+    const normalizedTaskId = normalizeTaskId(taskId)
+    if (!normalizedTaskId) return null
+    const numericTaskId = Number(normalizedTaskId)
+    return Number.isNaN(numericTaskId) ? normalizedTaskId : numericTaskId
+  }
   
   // -- Persisted Settings --
   const pomodoroDuration = ref(parseInt(localStorage.getItem('pomodoro_duration_work')) || 25 * 60)
@@ -37,8 +51,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   
   const completedPomodoros = ref(0)
   const todayFocusSeconds = ref(0)
-  const storedTaskId = localStorage.getItem('pomodoro_selectedTaskId')
-  const selectedTaskId = ref(storedTaskId && storedTaskId !== 'null' ? Number(storedTaskId) : null)
+  const selectedTaskId = ref(normalizeTaskId(localStorage.getItem('pomodoro_selectedTaskId')))
   const pomodorosSinceLongBreak = ref(parseInt(localStorage.getItem('pomodoro_pomodorosSinceLongBreak')) || 0)
 
   let timerInterval = null
@@ -82,8 +95,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   watch(currentMode, (val) => localStorage.setItem('pomodoro_currentMode', val))
   watch(pomodorosSinceLongBreak, (val) => localStorage.setItem('pomodoro_pomodorosSinceLongBreak', val))
   watch(selectedTaskId, (val) => {
-    if (val) {
-      localStorage.setItem('pomodoro_selectedTaskId', val)
+    const normalizedTaskId = normalizeTaskId(val)
+    if (normalizedTaskId) {
+      localStorage.setItem('pomodoro_selectedTaskId', normalizedTaskId)
     } else {
       localStorage.removeItem('pomodoro_selectedTaskId')
     }
@@ -172,6 +186,10 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     localStorage.setItem('pomodoro_timeLeft', timeLeft.value)
   }
 
+  function selectTask(taskId) {
+    selectedTaskId.value = normalizeTaskId(taskId)
+  }
+
   async function completeSession() {
     pauseTimer()
     localStorage.removeItem('pomodoro_endTime')
@@ -190,7 +208,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
         try {
           await savePomodoro({
             userId: userStore.user.id,
-            taskId: selectedTaskId.value,
+            taskId: parseTaskIdForApi(selectedTaskId.value),
             durationSeconds: pomodoroDuration.value,
             status: 'COMPLETED'
           })
@@ -313,6 +331,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     startTimer,
     pauseTimer,
     resetTimer,
+    selectTask,
     setMode,
     updateSettings,
     updateDuration,

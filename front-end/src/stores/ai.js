@@ -6,7 +6,7 @@ import { usePomodoroStore } from './pomodoro'
 import { getTasks } from '@/api/task'
 import { getDailyFocusStats } from '@/api/stats'
 import { getUserStats } from '@/api/gamification'
-import { getChatSessions, createChatSession, getChatMessages, saveChatMessage, deleteChatSession, updateChatSessionTitle } from '@/api/chat'
+import { getChatSessions, createChatSession, getChatMessages, saveChatMessage, deleteChatSession } from '@/api/chat'
 
 export const useAiStore = defineStore('ai', () => {
   const userStore = useUserStore()

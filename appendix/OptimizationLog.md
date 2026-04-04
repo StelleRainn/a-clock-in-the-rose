@@ -32,7 +32,7 @@
 ## 历史优化归档 
 
 ### 定稿至终稿期
-- [x] **番茄钟选中任务持久化与状态修复 (Timer Task Persistence)**: 修复了在首页 (`/dashboard`) 或番茄钟页面 (`/pomodoro`) 选中专注任务后，页面刷新会导致选中状态丢失、进而导致专注记录的任务 ID 存为 null 的问题。在 `pomodoro.js` Store 中引入了 `localStorage` 持久化 `selectedTaskId` 并在初始化时自动恢复；同时深度重构了 `PomodoroTimer.vue` 的响应式逻辑，将原先断层的 `ref` 替换为带有 `get/set` 的 `computed` 属性，并补全了缺失的 `updateDuration` 等方法，确保多页面间的状态同步与组件生命周期内的绝对稳定。
+- [x] **番茄钟选中任务持久化与状态修复 (Timer Task Persistence)**: 修复了在首页 (`/dashboard`) 或番茄钟页面 (`/pomodoro`) 选中专注任务后，页面刷新会导致选中状态丢失、进而导致专注记录的任务 ID 存为 null 的问题。在 `pomodoro.js` Store 中引入了 `localStorage` 持久化 `selectedTaskId` 并在初始化时自动恢复；同时深度重构了 `PomodoroTimer.vue` 的响应式逻辑，将原先断层的 `ref` 替换为带有 `get/set` 的 `computed` 属性，并补全了缺失的 `updateDuration` 等方法。随后进一步修复了云端环境下任务 ID 类型不一致（浏览器恢复后为数字、任务列表返回为字符串）导致的匹配失败问题，统一改为以字符串形式持久化与比对，并在提交后端时再安全转换，从而保证本地与生产环境下都能稳定恢复选中任务。
 - [x] **修复 Nginx 代理导致后端 404 的问题 (Nginx Reverse Proxy 404 Fix)**: 修复了公网部署时前端请求 `/api/auth/register` 等接口报 404 Not Found 的问题。原因在于 Nginx 的 `nginx.conf` 中 `proxy_pass http://acir-backend:8080/;` 带有尾部斜杠，导致 Nginx 在转发时截断了 `/api/` 前缀，使请求变成了 `/auth/register`，从而无法匹配后端 SpringBoot 控制器的 `@RequestMapping("/api/...")` 路由。通过移除 `proxy_pass` 尾部的斜杠解决了此问题。
 - [x] **增加修改密码功能 (Change Password)**: 在用户信息页面 (`/profile`) 增加了修改密码的功能，用户可直接输入新密码进行修改。后端复用了原有的强哈希 (BCrypt) 加密逻辑，保障账户安全。
 - [x] **首页禅定模式交互优化 (Zen Note Fade Logic)**: 修复了在首页（Focus Station）启动专注倒计时后，如果用户正在使用底部输入框 (Zen Note) 捕捉灵感（处于聚焦输入状态），3 秒无鼠标移动也会导致输入框错误淡出的问题。现在，只要输入框处于 `focus` 状态，即使触发了全局的 UI 淡出逻辑，该输入框也会保持可见，确保用户的文字录入过程不被打断，提升了极简体验下的可用性。
@@ -120,4 +120,3 @@
 
 #### 番茄钟
 - [x] 实现对具体任务开启番茄钟并存入数据库。
-

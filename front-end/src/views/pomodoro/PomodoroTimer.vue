@@ -59,7 +59,7 @@
             v-for="task in tasks"
             :key="task.id"
             :label="task.title"
-            :value="task.id"
+            :value="String(task.id)"
           >
             <span style="float: left">{{ task.title }}</span>
             <span style="float: right; color: #8492a6; font-size: 13px">
@@ -164,7 +164,7 @@ const cafeAudio = ref(null)
 const tasks = ref([])
 const selectedTask = computed({
   get: () => pomodoroStore.selectedTaskId,
-  set: (val) => pomodoroStore.selectedTaskId = val || null
+  set: (val) => pomodoroStore.selectTask(val)
 })
 const zenNote = ref('')
 
@@ -187,7 +187,7 @@ const handleSliderChange = (val) => {
 }
 
 const handleTaskSelect = (val) => {
-  pomodoroStore.selectedTaskId = val || null
+  pomodoroStore.selectTask(val)
 }
 
 const toggleImmersive = () => {
@@ -251,7 +251,7 @@ const fetchUserTasks = async () => {
 
 const currentTaskTitle = computed(() => {
   if (!pomodoroStore.selectedTaskId) return null
-  const task = tasks.value.find(t => t.id === pomodoroStore.selectedTaskId)
+  const task = tasks.value.find(t => String(t.id) === pomodoroStore.selectedTaskId)
   return task ? task.title : null
 })
 

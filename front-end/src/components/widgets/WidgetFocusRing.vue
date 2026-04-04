@@ -3,7 +3,7 @@
     <div class="focus-stat-container">
       <div class="ring-chart">
         <el-progress type="dashboard" :percentage="dailyGoalPercentage" :color="colors">
-          <template #default="{ percentage }">
+          <template #default>
             <span class="percentage-value">{{ Math.round(pomodoroStore.todayFocusSeconds / 60) }}m</span>
             <span class="percentage-label">Focused</span>
           </template>

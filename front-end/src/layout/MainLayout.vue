@@ -64,7 +64,7 @@ const handleTaskSubmit = async (payload) => {
     dialogVisible.value = false
     // Ideally we should trigger a refresh in the active view, 
     // but for now this global add is a "fire and forget" or we can use an event bus/store action
-  } catch (e) {
+  } catch {
     ElMessage.error('Failed to create task')
   }
 }

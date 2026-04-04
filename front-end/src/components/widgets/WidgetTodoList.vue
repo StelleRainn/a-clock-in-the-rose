@@ -21,12 +21,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getTasks, updateTask } from '@/api/task'
 import { ElMessage } from 'element-plus'
 
-const router = useRouter()
 const userStore = useUserStore()
 const tasks = ref([])
 
@@ -53,7 +51,7 @@ const toggleTask = async (task) => {
   try {
     await updateTask(task.id, { ...task, status: newStatus, userId: userStore.user.id })
     ElMessage.success('Task updated')
-  } catch (e) {
+  } catch {
     task.status = newStatus === 'DONE' ? 'TODO' : 'DONE'
     ElMessage.error('Failed to update task')
   }

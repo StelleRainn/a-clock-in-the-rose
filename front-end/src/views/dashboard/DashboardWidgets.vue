@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { Plus, Close, Calendar, PieChart, List, ChatDotSquare } from '@element-plus/icons-vue'
+import { Plus, Close, Calendar, PieChart, List } from '@element-plus/icons-vue'
 import WidgetHeatmap from '@/components/widgets/WidgetHeatmap.vue'
 import WidgetFocusRing from '@/components/widgets/WidgetFocusRing.vue'
 import WidgetTodoList from '@/components/widgets/WidgetTodoList.vue'
