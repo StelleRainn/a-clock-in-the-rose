@@ -17,7 +17,7 @@
           <component :is="Component" />
         </transition>
       </router-view>
-      <GlobalFooter />
+      <GlobalFooter v-if="!isAiChat" />
     </main>
 
     <!-- Bottom Navigation (Mobile) -->
@@ -52,6 +52,10 @@ const dialogVisible = ref(false)
 
 const isDashboard = computed(() => {
   return route.name === 'dashboard' || route.path === '/dashboard'
+})
+
+const isAiChat = computed(() => {
+  return route.name === 'intelligent' || route.path === '/intelligent'
 })
 
 const showAddTaskDialog = () => {

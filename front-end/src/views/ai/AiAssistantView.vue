@@ -4,7 +4,7 @@
     <div class="chat-sidebar" :class="{ 'sidebar-open': isSidebarOpen }">
       <div class="sidebar-header">
         <el-button type="primary" class="new-chat-btn" @click="handleNewChat">
-          <el-icon><Plus /></el-icon> New Chat
+          <el-icon><Plus /></el-icon> {{ $t('ai.newChat') }}
         </el-button>
         <el-button class="mobile-close-btn" circle @click="isSidebarOpen = false">
           <el-icon><Close /></el-icon>
@@ -13,7 +13,7 @@
       
       <div class="sessions-list" v-loading="isSessionsLoading">
         <div v-if="sessions.length === 0 && !isSessionsLoading" class="no-sessions">
-          No previous chats
+          {{ $t('ai.noPreviousChats') }}
         </div>
         <div 
           v-for="session in sessions" 
@@ -42,24 +42,24 @@
         <el-button circle @click="isSidebarOpen = true">
           <el-icon><Menu /></el-icon>
         </el-button>
-        <span class="mobile-title">ACIR Intelligent</span>
+        <span class="mobile-title">{{ $t('ai.intelligent') }}</span>
       </div>
 
       <!-- Chat Container -->
       <div class="chat-container" ref="chatContainerRef">
       <div v-if="messages.length === 0" class="empty-state">
         <el-icon :size="64" class="ai-icon"><Cpu /></el-icon>
-        <h2>ACIR Intelligent</h2>
-        <p>I am your personal productivity assistant. How can I help you today?</p>
+        <h2>{{ $t('ai.intelligent') }}</h2>
+        <p>{{ $t('ai.intro') }}</p>
         <div class="suggestions">
           <el-tag 
             v-for="s in suggestions" 
             :key="s" 
             effect="plain" 
             class="suggestion-tag"
-            @click="sendMessage(s)"
+            @click="sendMessage($t(`ai.${s.key}`))"
           >
-            {{ s }}
+            {{ $t(`ai.${s.key}`) }}
           </el-tag>
         </div>
       </div>
@@ -111,7 +111,7 @@
           v-model="inputMessage"
           type="textarea"
           :autosize="{ minRows: 1, maxRows: 4 }"
-          placeholder="Message ACIR..."
+          :placeholder="$t('ai.inputPlaceholder')"
           resize="none"
           @keydown.enter.prevent="handleEnter"
           :disabled="isLoading"
@@ -130,7 +130,7 @@
         />
       </div>
       <div class="disclaimer">
-        AI can make mistakes. Please verify important information.
+        {{ $t('ai.disclaimer') }}
       </div>
     </div>
     </div>
@@ -142,10 +142,12 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useAiStore } from '@/stores/ai'
 import { useUserStore } from '@/stores/user'
 import { Cpu, Position, ChatDotRound, Plus, ChatDotSquare, Delete, Menu, Close } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 // Initialize
+const { t } = useI18n()
 const aiStore = useAiStore()
 const userStore = useUserStore()
 const md = new MarkdownIt({
@@ -167,10 +169,10 @@ const isLoading = computed(() => aiStore.isLoading)
 const userAvatar = computed(() => userStore.user?.avatarUrl || '')
 
 const suggestions = [
-  "Analyze my focus efficiency today",
-  "Help me prioritize my tasks",
-  "I'm feeling tired, what should I do?",
-  "Summarize my recent achievements"
+  { key: 'suggAnalyze' },
+  { key: 'suggPrioritize' },
+  { key: 'suggTired' },
+  { key: 'suggSummarize' }
 ]
 
 // Methods
@@ -198,13 +200,13 @@ const selectSession = async (id) => {
 }
 
 const deleteSession = (id) => {
-  ElMessageBox.confirm('Are you sure you want to delete this chat?', 'Warning', {
-    confirmButtonText: 'OK',
-    cancelButtonText: 'Cancel',
+  ElMessageBox.confirm(t('ai.deleteChatConfirm'), t('tasks.deleteConfirmTitle'), {
+    confirmButtonText: t('tasks.ok'),
+    cancelButtonText: t('tasks.cancel'),
     type: 'warning'
   }).then(() => {
     aiStore.deleteSession(id)
-    ElMessage.success('Chat deleted')
+    ElMessage.success(t('ai.chatDeleted'))
   }).catch(() => {})
 }
 

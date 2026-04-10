@@ -4,6 +4,7 @@ export default {
     calendar: '日历与回顾',
     tasks: '任务清单',
     stats: '统计数据',
+    intelligent: 'AI 助手',
     profile: '个人资料',
     logout: '退出登录',
     addWidget: '添加小组件'
@@ -225,6 +226,20 @@ export default {
     exportTasksFailed: '导出任务失败',
     recordsExported: '专注记录导出成功',
     exportRecordsFailed: '导出记录失败'
+  },
+  ai: {
+    newChat: '新对话',
+    noPreviousChats: '暂无历史对话',
+    intelligent: 'ACIR 智能助手',
+    intro: '我是您的专属效率助手。今天有什么我可以帮忙的吗？',
+    suggAnalyze: '分析今日的专注效率',
+    suggPrioritize: '帮我排定任务优先级',
+    suggTired: '我有点累了，现在该怎么办？',
+    suggSummarize: '总结我最近的成就',
+    inputPlaceholder: '发送给 ACIR...',
+    disclaimer: 'AI 可能会犯错。请核实重要信息。',
+    deleteChatConfirm: '您确定要删除这个对话吗？',
+    chatDeleted: '对话已删除'
   },
   footer: {
     designedBy: '时雨蔷薇，匠心呈现',

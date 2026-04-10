@@ -4,6 +4,7 @@ export default {
     calendar: 'Calendar',
     tasks: 'Tasks',
     stats: 'Stats',
+    intelligent: 'ACIR Intelligent',
     profile: 'Profile',
     logout: 'Logout',
     addWidget: 'Add Widget'
@@ -225,6 +226,20 @@ export default {
     exportTasksFailed: 'Failed to export tasks',
     recordsExported: 'Focus records exported successfully',
     exportRecordsFailed: 'Failed to export records'
+  },
+  ai: {
+    newChat: 'New Chat',
+    noPreviousChats: 'No previous chats',
+    intelligent: 'ACIR Intelligent',
+    intro: 'I am your personal productivity assistant. How can I help you today?',
+    suggAnalyze: 'Analyze my focus efficiency today',
+    suggPrioritize: 'Help me prioritize my tasks',
+    suggTired: 'I\'m feeling tired, what should I do?',
+    suggSummarize: 'Summarize my recent achievements',
+    inputPlaceholder: 'Message ACIR...',
+    disclaimer: 'AI can make mistakes. Please verify important information.',
+    deleteChatConfirm: 'Are you sure you want to delete this chat?',
+    chatDeleted: 'Chat deleted'
   },
   footer: {
     designedBy: 'Designed by StelleRainn in ',

@@ -146,6 +146,51 @@
    ```
 完成以上 4 步，你的 ECS 服务器就仿佛回到了第一次部署这个项目时的纯净状态！
 
+### 6.4 企业级架构进阶：本地 M1 交叉编译与云端拉取 (CI/CD 雏形)
+
+**痛点**：在 2C2G 的低配云主机上直接执行 `pnpm build` 或 `mvn package`，不仅速度极慢，还极易因为内存耗尽（OOM）导致机器卡死、SSH 断线。
+**破局点**：利用 Docker "Build once, run everywhere" 的特性，将**重体力劳动（源码编译打包）**交给性能强劲的 Mac 本地完成，将打好的镜像直接推送到阿里云镜像仓库，云主机只负责**轻松的运行（拉取镜像并启动）**。
+
+
+**核心配置调整 (`docker-compose.yml`)**：
+为需要自己构建的容器（前端和后端）指定 `image` 名称（关联阿里云镜像仓库地址），并**务必添加 `platform: linux/amd64`** 配置。
+*注意：Mac M 系列是 ARM64 架构，而云主机通常是 AMD64 (x86_64) 架构。`platform` 参数会强制开启交叉编译，让 Mac 打包出云主机能原生运行的镜像包，避免出现 `exec format error`。*
+
+**终极丝滑部署/更新工作流（两步走）：**
+
+**第一步：在 Mac 本地（构建与推送）**
+
+_建议在 macOS Terminal 中进行，避免网络问题！_
+
+1. 登录阿里云镜像仓库（首次需输入控制台设置的密码）：
+   ```bash
+    docker login --username=时雨蔷薇 crpi-wwifswyqz8bp8ddb.cn-wulanchabu.personal.cr.aliyuncs.com
+   ```
+2. 执行交叉编译构建（M1 芯片会自动模拟 AMD64 环境进行打包）：
+   ```bash
+   docker-compose build
+   ```
+3. 推送构建好的成品镜像包到阿里云仓库：
+   ```bash
+   docker-compose push
+   ```
+
+**第二步：在 ECS 云主机上（拉取与运行）**
+*(前提：确保服务器上的 `docker-compose.yml` 已经通过 `git pull` 更新到了带有 image 和 platform 配置的最新版本)*
+1. 登录阿里云镜像仓库（首次需登录）：
+   ```bash
+    docker login --username=时雨蔷薇 crpi-wwifswyqz8bp8ddb.cn-wulanchabu.personal.cr.aliyuncs.com
+   ```
+2. 拉取刚刚在 Mac 上做好的镜像（这会直接下载编译好的环境和代码，跳过任何耗时的 build 阶段）：
+   ```bash
+   docker-compose pull
+   ```
+3. 瞬间启动容器集群：
+   ```bash
+   docker-compose up -d
+   ```
+*至此，你完美避开了低配云主机 CPU/内存不足的物理限制。以后每次修改代码，只需要本地 `build -> push`，云端 `pull -> up -d` 即可实现光速发版！*
+
 ---
 
 > **行动锚点**: 本文档为动态更新文档，每完成一个阶段的任务，我们将在此处打钩 `[x]` 并记录相关细节。

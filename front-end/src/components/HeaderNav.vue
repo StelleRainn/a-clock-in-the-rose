@@ -26,6 +26,9 @@
           <router-link to="/stats" class="nav-item" active-class="active">
           {{ $t('nav.stats') }}
           </router-link>
+          <router-link to="/intelligent" class="nav-item" active-class="active">
+          {{ $t('nav.intelligent') }}
+          </router-link>
         </nav>
       </div>
 
@@ -111,6 +114,9 @@
           </router-link>
           <router-link to="/stats" class="nav-item" active-class="active">
           {{ $t('nav.stats') }}
+          </router-link>
+          <router-link to="/intelligent" class="nav-item" active-class="active">
+          {{ $t('nav.intelligent') }}
           </router-link>
         </nav>
       </div>
